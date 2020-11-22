@@ -174,7 +174,7 @@ pub fn turnRight(state: *GameState) void {
     }
 }
 
-// Simple movement, not too fine grained.
+// Simple movement, not too fine grained, given how much shared logic there is here, I can tidy this up.
 pub fn moveForward(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;

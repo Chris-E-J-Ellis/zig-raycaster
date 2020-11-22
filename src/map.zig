@@ -2,6 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 
 // Not really interested in big maps or allocation for the moment.
+
 pub const Map = struct {
     width: u32,
     height: u32,
@@ -17,6 +18,14 @@ pub const Map = struct {
         return map;
     }
 
+    /// Load a map that looks something like:
+    /// width = 3
+    /// height = 3
+    /// data = [
+    ///     1, 1, 1
+    ///     1, 0, 1
+    ///     1, 1, 1
+    ///]
     pub fn createFromFile(filename: []const u8) !Map {
         var pathBuffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const file_path = try std.fs.realpath(filename, &pathBuffer);
@@ -57,7 +66,7 @@ pub const Map = struct {
         return map;
     }
 
-    fn populateEdges(map: *Map) void {
+    pub fn populateEdges(map: *Map) void {
         for (map.data) |*item, index| {
             if (index < map.width or index % map.width == 0 or index % map.width == map.width - 1 or index > (map.width * map.height - map.width)) {
                 item.* = 1;
