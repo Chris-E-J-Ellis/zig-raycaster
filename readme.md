@@ -18,3 +18,5 @@ Using inspiration from a few sources:
     - Libs in "deps/lib"
     - This seems fine on Zig 0.6.0, but in 0.7.0 trying to link the mingw SDL2 library seems to fall over while trying to locate SDL2.lib, it seems my gnu target is not being respected and it's attempting to use msvc.
 - Enjoy!
+
+![Small demo](/demo-small.gif)
