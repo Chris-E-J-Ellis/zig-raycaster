@@ -54,14 +54,14 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         var height = calcHeight(state, rayCastResult.distance, viewing_angle);
 
         var wall_colour: u32 = switch (rayCastResult.wall_type) {
-            1 => 0xAA0000,
-            2 => 0x00AA00,
-            3 => 0x0000AA,
+            1 => 0xAA0000 + (rayCastResult.texel_intersect << 16),
+            2 => 0x00AA00 + (rayCastResult.texel_intersect << 8),
+            3 => 0x0000AA + (rayCastResult.texel_intersect),
             else => 0x000000,
         };
 
         if (!rayCastResult.horizontal_wall)
-            wall_colour /= 2;
+            wall_colour = (wall_colour >> 1) & 0x7F7F7F; // Darken and remove errant bits.
 
         // Draw to screen
         renderer.drawCenteredColumn(column_render_count, height, wall_colour);
@@ -72,7 +72,12 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
 }
 
 const RayCastResult = struct {
-    map_x: u32, map_y: u32, distance: f32, horizontal_wall: bool, wall_type: u8
+    map_x: u32,
+    map_y: u32,
+    distance: f32,
+    horizontal_wall: bool,
+    wall_type: u8,
+    texel_intersect: u32,
 };
 
 /// Use DDA to cast a ray within a supplied map.
@@ -86,8 +91,10 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
 
     // Find DDA step sizes
     // Some cos/sin radian oddities to check out.
-    const delta_dist_x = std.math.absFloat(1 / std.math.cos(angle_degs * rads_per_deg));
-    const delta_dist_y = std.math.absFloat(1 / std.math.cos((90 - angle_degs) * rads_per_deg));
+    const sin_theta = std.math.cos((90 - angle_degs) * rads_per_deg);
+    const cos_theta = std.math.cos(angle_degs * rads_per_deg);
+    const delta_dist_x = std.math.absFloat(1 / cos_theta);
+    const delta_dist_y = std.math.absFloat(1 / sin_theta);
 
     const x_step = delta_dist_x * cell_size;
     const y_step = delta_dist_y * cell_size;
@@ -128,10 +135,18 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     }
 
     // Remove one step's worth of walking for hit distance.
-    var distance = if (horizontal_wall_hit)
+    const distance = if (horizontal_wall_hit)
         x_walk - x_step
     else
         y_walk - y_step;
+
+    // Calculate intersection texel.
+    const texel_intersect_coord = if (horizontal_wall_hit)
+        @as(i64, start_y) - @floatToInt(i64, distance * sin_theta)
+    else
+        @floatToInt(i64, distance * cos_theta) + @as(i64, start_x);
+
+    const texel_intersect = @mod(texel_intersect_coord, cell_size);
 
     return RayCastResult{
         .map_x = @intCast(u32, x_walk_cell),
@@ -139,6 +154,7 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
         .distance = distance,
         .horizontal_wall = horizontal_wall_hit,
         .wall_type = wall_type,
+        .texel_intersect = @intCast(u32, texel_intersect),
     };
 }
 
