@@ -1,5 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
+const Texture = @import("texture.zig").Texture;
 const Renderer = @import("renderer.zig");
 usingnamespace @import("map.zig");
 
@@ -16,6 +17,7 @@ pub const GameState = struct {
     player_angle: u32,
     fov: u32,
     map: Map,
+    textures: [10]Texture,
 
     pub fn initDefault(width: usize, height: usize) !GameState {
         return GameState{
@@ -27,6 +29,7 @@ pub const GameState = struct {
             .screen_width = width,
             .screen_height = height,
             .distance_to_projection_plane = @intToFloat(f32, width / 2) / std.math.tan(rads_per_deg * 30),
+            .textures = try Texture.loadTextures(),
         };
     }
 };
@@ -64,7 +67,10 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
             wall_colour = (wall_colour >> 1) & 0x7F7F7F; // Darken and remove errant bits.
 
         // Draw to screen
-        renderer.drawCenteredColumn(column_render_count, height, wall_colour);
+        //renderer.drawCenteredColumn(column_render_count, height, wall_colour);
+        const texture = state.textures[rayCastResult.wall_type];
+        const texels = texture.data[rayCastResult.texel_intersect * texture.height ..];
+        renderer.drawCenteredTexturedColumn(column_render_count, height, texels);
 
         // Increment angle
         render_angle = wrapAngle(f32, render_angle - column_angle);
@@ -146,7 +152,12 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     else
         @floatToInt(i64, distance * cos_theta) + @as(i64, start_x);
 
-    const texel_intersect = @mod(texel_intersect_coord, cell_size);
+    // Flip texture depending on direction.
+    var texel_intersect = @mod(texel_intersect_coord, cell_size);
+    if (horizontal_wall_hit and x_dir == -1)
+        texel_intersect = 63 - texel_intersect;
+    if (!horizontal_wall_hit and y_dir == 1)
+        texel_intersect = 63 - texel_intersect;
 
     return RayCastResult{
         .map_x = @intCast(u32, x_walk_cell),
@@ -168,9 +179,9 @@ pub fn calcHeight(state: *GameState, distance: f32, viewing_angle: f32) u32 {
         view_corrected_distance += 0.01;
 
     const col_height = @floatToInt(u32, cell_size / view_corrected_distance * state.distance_to_projection_plane);
-    const clamped_height = std.math.clamp(col_height, 0, @intCast(u32, state.screen_height));
+    //const clamped_height = std.math.clamp(col_height, 0, @intCast(u32, state.screen_height));
 
-    return clamped_height;
+    return col_height;
 }
 
 // Basic movement for testing.
