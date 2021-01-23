@@ -87,14 +87,29 @@ fn drawCenteredColumn(self: *Renderer, x: usize, height: usize, colour: u32) voi
 }
 
 fn drawCenteredTexturedColumn(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
+    const texture_height = 64;
     var clamped_height = if (height > screen_height) screen_height else height;
-    var draw_y: usize = 0;
-    var draw_y_start = @as(usize, @divFloor(screen_height - clamped_height, 2));
 
-    // I guess we could speed this up by pre calculating a bunch of scaled textures.
-    while (draw_y < clamped_height) : (draw_y += 1) {
-        const texel_index = (draw_y * 64) / clamped_height;
-        const texel = texels[texel_index];
-        back_buffer[x + (draw_y + draw_y_start) * screen_width] = texel;
+    if (height < screen_height) {
+        var draw_y: usize = 0;
+        const draw_y_start = @as(usize, @divFloor(screen_height - height, 2));
+
+        // I guess we could speed this up by pre calculating a bunch of scaled textures.
+        while (draw_y < height) : (draw_y += 1) {
+            const texel_index = (draw_y * texture_height) / height; // Need to check out a floating point oddity.
+            const texel = texels[texel_index];
+            back_buffer[x + (draw_y + draw_y_start) * screen_width] = texel;
+        }
+    } else {
+        var draw_y: usize = 0;
+        const draw_y_start = @as(usize, @divFloor(height - screen_height, 2));
+        const offset = (height / screen_height) * draw_y_start;
+
+        // I guess we could speed this up by pre calculating a bunch of scaled textures.
+        while (draw_y < screen_height) : (draw_y += 1) {
+            const texel_index = ((draw_y + draw_y_start) * texture_height) / height;
+            const texel = texels[texel_index];
+            back_buffer[x + draw_y * screen_width] = texel;
+        }
     }
 }
