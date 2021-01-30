@@ -69,7 +69,8 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         // Draw to screen
         //renderer.drawCenteredColumn(column_render_count, height, wall_colour);
         const texture = state.textures[rayCastResult.wall_type];
-        const texels = texture.data[rayCastResult.texel_intersect * texture.height ..];
+        const texel_index = rayCastResult.texel_intersect * texture.height;
+        const texels = texture.data[texel_index .. texel_index + texture.height];
         renderer.drawCenteredTexturedColumn(column_render_count, height, texels);
 
         // Increment angle
