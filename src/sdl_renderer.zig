@@ -87,14 +87,34 @@ fn drawCenteredColumn(self: *Renderer, x: usize, height: usize, colour: u32) voi
 }
 
 fn drawCenteredTexturedColumn(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
-    var draw_height = if (height > screen_height) screen_height else height;
-    var texel_start_offset = if (height > screen_height) @divFloor(height - screen_height, 2) else 0;
-    var back_buffer_offset = if (height < screen_height) @divFloor(screen_height - height, 2) else 0;
+    const draw_height = if (height > screen_height) screen_height else height;
+    const texel_start_offset = if (height > screen_height) @divFloor(height - screen_height, 2) else 0;
+    const back_buffer_offset = if (height < screen_height) @divFloor(screen_height - height, 2) else 0;
 
     var draw_y: usize = 0;
     while (draw_y < draw_height) : (draw_y += 1) {
         const texel_index = ((draw_y + texel_start_offset) * texels.len) / height;
         const texel = texels[texel_index];
-        back_buffer[x + (draw_y + back_buffer_offset) * screen_width] = texel;
+        back_buffer[x + ((draw_y + back_buffer_offset) * screen_width)] = texel;
+    }
+
+    drawCenteredTexturedColumnAlt(self, x, height, texels);
+}
+
+fn drawCenteredTexturedColumnAlt(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
+    const draw_start = if (height < screen_height) @divFloor(screen_height - height, 2) else 0;
+    const draw_end = if (height < screen_height) screen_height - @divFloor(screen_height - height, 2) else screen_height;
+    const texel_start_offset = if (height > screen_height) @divFloor(height - screen_height, 2) else 0;
+    var texel_index = (texel_start_offset * texels.len) / height;
+
+    var count: usize = 0;
+    var draw_y = draw_start;
+    while (draw_y < draw_end) : ({
+        draw_y += 1;
+        count += 1;
+    }) {
+        const texel = texels[texel_index];
+        back_buffer[x + draw_y * screen_width] = texel;
+        texel_index = (texel_start_offset + count) * texels.len / height;
     }
 }
