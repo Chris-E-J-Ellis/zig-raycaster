@@ -12,6 +12,7 @@ Using inspiration from a few sources:
 - SDL2 seems fairly straightforward to use via C interop.
 - I'm still new to Zig, there's some stuff in there that probably isn't best practice.
 - I don't write many games, so I wouldn't use this as basis for an engine =D
+- This is very much a test of a few things, so there's likely to be a bunch of loose ends, don't pull too hard.
 - Linux - you should be fine if you have a development version of SDL2 installed. 
 - Windows - I was using the MinGW version of SDL2 (see build.zig)
     - Headers in "deps/include"
@@ -20,3 +21,4 @@ Using inspiration from a few sources:
 - Enjoy!
 
 ![Small demo](/demo-small.gif)
+![Small Textured demo](/demo-small-textured.gif)

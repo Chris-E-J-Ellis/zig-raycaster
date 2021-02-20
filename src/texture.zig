@@ -1,5 +1,5 @@
-const texture_width = 64;
-const texture_height = 64;
+pub const texture_width = 64;
+pub const texture_height = 64;
 const texture_data_length = texture_width * texture_height;
 
 pub const Texture = struct {

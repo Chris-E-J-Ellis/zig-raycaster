@@ -4,6 +4,7 @@ const Texture = @import("texture.zig").Texture;
 const Renderer = @import("renderer.zig");
 usingnamespace @import("map.zig");
 
+const texture_height = @import("texture.zig").texture_height;
 const cell_size = 64;
 const speed_scale = 4;
 const rads_per_deg: f32 = std.math.tau / 360.0;
@@ -56,22 +57,16 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         const viewing_angle = std.math.absFloat(player_angle - render_angle);
         var height = calcHeight(state, rayCastResult.distance, viewing_angle);
 
-        var wall_colour: u32 = switch (rayCastResult.wall_type) {
-            1 => 0xAA0000 + (rayCastResult.texel_intersect << 16),
-            2 => 0x00AA00 + (rayCastResult.texel_intersect << 8),
-            3 => 0x0000AA + (rayCastResult.texel_intersect),
-            else => 0x000000,
-        };
-
-        if (!rayCastResult.horizontal_wall)
-            wall_colour = (wall_colour >> 1) & 0x7F7F7F; // Darken and remove errant bits.
-
-        // Draw to screen
-        //renderer.drawCenteredColumn(column_render_count, height, wall_colour);
+        // Draw to screen, could save some effort by precomputing these darkened texels.
         const texture = state.textures[rayCastResult.wall_type];
         const texel_index = rayCastResult.texel_intersect * texture.height;
         const texels = texture.data[texel_index .. texel_index + texture.height];
-        renderer.drawCenteredTexturedColumn(column_render_count, height, texels);
+        var tex_buf: [texture_height]u32 = undefined;
+        for (tex_buf) |*texel, i| {
+            // Darken and remove errant bits if required
+            texel.* = if (!rayCastResult.horizontal_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
+        }
+        renderer.drawCenteredTexturedColumn(column_render_count, height, tex_buf[0..]);
 
         // Increment angle
         render_angle = wrapAngle(f32, render_angle - column_angle);

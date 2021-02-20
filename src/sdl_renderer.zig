@@ -97,8 +97,6 @@ fn drawCenteredTexturedColumn(self: *Renderer, x: usize, height: usize, texels: 
         const texel = texels[texel_index];
         back_buffer[x + ((draw_y + back_buffer_offset) * screen_width)] = texel;
     }
-
-    drawCenteredTexturedColumnAlt(self, x, height, texels);
 }
 
 fn drawCenteredTexturedColumnAlt(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
