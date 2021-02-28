@@ -70,7 +70,8 @@ pub fn processInput(state: *engine.GameState) bool {
         engine.strafeRight(state);
 
     if (keys.isPressed(.i)) {
-        std.debug.print("state {}\n", .{state});
+        //std.debug.print("state {}\n", .{state});
+        std.debug.print("state {}\n", .{state.player_angle});
     }
 
     if (keys.isPressed(.x)) {

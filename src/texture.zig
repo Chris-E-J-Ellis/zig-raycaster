@@ -1,3 +1,5 @@
+const std = @import("std");
+
 pub const texture_width = 64;
 pub const texture_height = 64;
 const texture_data_length = texture_width * texture_height;
@@ -8,10 +10,31 @@ pub const Texture = struct {
     data: [texture_data_length]u32 = [_]u32{0} ** texture_data_length,
 
     pub fn createFromFile(filename: []const u8) !Texture {
-        return error.NotImplemented;
+        var path_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+        const file_path = try std.fs.realpath(filename, &path_buffer);
+
+        var file_buffer: [15 * 1024]u8 = undefined;
+        const file = try std.fs.openFileAbsolute(file_path, .{ .read = true });
+        defer file.close();
+
+        const length = try file.readAll(&file_buffer);
+
+        var texture = Texture{
+            .width = 64,
+            .height = 64,
+        };
+
+        const image_data_start_offset = file_buffer[0x0A];
+        for (texture.data) |*texel, index| {
+            const r: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3) + 2]) << 16;
+            const g: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3) + 1]) << 8;
+            const b: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3)]);
+            texel.* = r | g | b;
+        }
+        return texture;
     }
 
-    pub fn loadTextures() ![10]Texture {
+    pub fn loadDummyTextures() ![10]Texture {
         var textures = [_]Texture{Texture{}} ** 10;
 
         // Generate some textures.
@@ -40,6 +63,28 @@ pub const Texture = struct {
         for (textures) |texture, index| {
             textures[index] = createWithFlippedXY(texture);
         }
+
+        return textures;
+    }
+
+    pub fn loadTextures() ![10]Texture {
+        var textures = [_]Texture{Texture{}} ** 10;
+
+        textures[1] = try createFromFile("data/bluestone.bmp");
+        textures[2] = try createFromFile("data/wood.bmp");
+        textures[3] = try createFromFile("data/eagle.bmp");
+        textures[4] = try createFromFile("data/greystone.bmp");
+        textures[5] = try createFromFile("data/colorstone.bmp");
+        textures[6] = try createFromFile("data/redbrick.bmp");
+        textures[7] = try createFromFile("data/mossy.bmp");
+        textures[8] = try createFromFile("data/purplestone.bmp");
+
+        // Swap texture x and y and invert bitmap for easier slice passing later.
+        for (textures) |texture, index| {
+            textures[index] = createWithFlippedY(texture);
+            textures[index] = createWithFlippedXY(textures[index]);
+        }
+
         return textures;
     }
 
@@ -51,6 +96,19 @@ pub const Texture = struct {
             var y: u32 = 0;
             while (y < texture.height) : (y += 1) {
                 flippedTexture.data[x + y * texture_width] = texture.data[y + x * texture_height];
+            }
+        }
+        return flippedTexture;
+    }
+
+    fn createWithFlippedY(texture: Texture) Texture {
+        var flippedTexture = Texture{ .width = texture.width, .height = texture.height };
+
+        var y: u32 = 0;
+        while (y < texture.height) : (y += 1) {
+            var x: u32 = 0;
+            while (x < texture.width) : (x += 1) {
+                flippedTexture.data[x + y * texture_width] = texture.data[x + ((texture_height - 1) - y) * texture_width];
             }
         }
         return flippedTexture;

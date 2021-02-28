@@ -22,8 +22,8 @@ pub const GameState = struct {
 
     pub fn initDefault(width: usize, height: usize) !GameState {
         return GameState{
-            .player_x = (64 * 4) + 32,
-            .player_y = (64 * 4) + 32,
+            .player_x = (64 * 2) + 32,
+            .player_y = (64 * 2) + 32,
             .player_angle = 0,
             .fov = 60,
             .map = try Map.createFromFile("data/map1.map"),
@@ -58,7 +58,7 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         var height = calcHeight(state, rayCastResult.distance, viewing_angle);
 
         // Draw to screen, could save some effort by precomputing these darkened texels.
-        const texture = state.textures[rayCastResult.wall_type];
+        var texture = state.textures[rayCastResult.wall_type];
         const texel_index = rayCastResult.texel_intersect * texture.height;
         const texels = texture.data[texel_index .. texel_index + texture.height];
         var tex_buf: [texture_height]u32 = undefined;
@@ -144,16 +144,16 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
 
     // Calculate intersection texel.
     const texel_intersect_coord = if (horizontal_wall_hit)
-        @as(i64, start_y) - @floatToInt(i64, distance * sin_theta)
+        @intToFloat(f32, start_y) - (distance * sin_theta)
     else
-        @floatToInt(i64, distance * cos_theta) + @as(i64, start_x);
+        (distance * cos_theta) + @intToFloat(f32, start_x);
 
     // Flip texture depending on direction.
     var texel_intersect = @mod(texel_intersect_coord, cell_size);
-    if (horizontal_wall_hit and x_dir == -1)
-        texel_intersect = 63 - texel_intersect;
-    if (!horizontal_wall_hit and y_dir == 1)
-        texel_intersect = 63 - texel_intersect;
+    //if (horizontal_wall_hit and x_dir == -1)
+    //    texel_intersect = 63 - texel_intersect;
+    //if (!horizontal_wall_hit and y_dir == 1)
+    //    texel_intersect = 63 - texel_intersect;
 
     return RayCastResult{
         .map_x = @intCast(u32, x_walk_cell),
@@ -161,7 +161,7 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
         .distance = distance,
         .horizontal_wall = horizontal_wall_hit,
         .wall_type = wall_type,
-        .texel_intersect = @intCast(u32, texel_intersect),
+        .texel_intersect = @floatToInt(u32, texel_intersect),
     };
 }
 
@@ -237,6 +237,34 @@ fn wrapAngle(comptime T: type, angle: T) T {
     } else {
         return angle + 360;
     }
+}
+
+test "DDA - Sort my texture issue out" {
+    var map = Map{
+        .width = 4,
+        .height = 4,
+        .data = [_]u8{0} ** 1000,
+    };
+    map.populateEdges();
+
+    var start_x: u32 = (cell_size * 1) + cell_size;
+    var start_y: u32 = (cell_size * 1) + cell_size + 2;
+    var player_angle: f32 = 2;
+    var result = castRay(map, start_x, start_y, player_angle);
+    std.debug.print("int: {}, dist {}", .{ result.texel_intersect, result.distance });
+    std.debug.print("\n", .{});
+
+    while (player_angle <= 2 or player_angle > 358) {
+        result = castRay(map, start_x, start_y, player_angle);
+        //std.debug.print("{}", .{result});
+        std.debug.print("ang: {d: >6.2}, inter: {d: >2}, dist {d: >5.2}", .{ player_angle, result.texel_intersect, result.distance });
+        std.debug.print("\n", .{});
+        player_angle = wrapAngle(f32, player_angle - 0.2);
+    }
+
+    std.debug.print("\n", .{});
+
+    testing.expect(true);
 }
 
 test "DDA - A bunch of loose direction tests" {
