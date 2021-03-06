@@ -64,7 +64,7 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         var tex_buf: [texture_height]u32 = undefined;
         for (tex_buf) |*texel, i| {
             // Darken and remove errant bits if required
-            texel.* = if (!rayCastResult.horizontal_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
+            texel.* = if (!rayCastResult.vertical_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
         }
         renderer.drawCenteredTexturedColumn(column_render_count, height, tex_buf[0..]);
 
@@ -77,7 +77,7 @@ const RayCastResult = struct {
     map_x: u32,
     map_y: u32,
     distance: f32,
-    horizontal_wall: bool,
+    vertical_wall: bool,
     wall_type: u8,
     texel_intersect: u32,
 };
@@ -115,17 +115,17 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     var y_walk_cell = @intCast(i32, start_cell_y);
 
     var wall_type: u8 = undefined;
-    var horizontal_wall_hit = false;
+    var vertical_wall_hit = false;
     var hit = false;
     while (hit == false) {
         if (x_walk < y_walk) {
             x_walk += x_step;
             x_walk_cell += x_dir;
-            horizontal_wall_hit = true;
+            vertical_wall_hit = true;
         } else {
             y_walk += y_step;
             y_walk_cell += y_dir;
-            horizontal_wall_hit = false;
+            vertical_wall_hit = false;
         }
 
         var index = @intCast(usize, x_walk_cell + (y_walk_cell * @intCast(i32, map.width)));
@@ -137,31 +137,32 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     }
 
     // Remove one step's worth of walking for hit distance.
-    const distance = if (horizontal_wall_hit)
+    const distance = if (vertical_wall_hit)
         x_walk - x_step
     else
         y_walk - y_step;
 
     // Calculate intersection texel.
-    const texel_intersect_coord = if (horizontal_wall_hit)
+    const texel_intersect_coord = if (vertical_wall_hit)
         @intToFloat(f32, start_y) - (distance * sin_theta)
     else
         (distance * cos_theta) + @intToFloat(f32, start_x);
 
     // Flip texture depending on direction.
-    var texel_intersect = @mod(texel_intersect_coord, cell_size);
-    //if (horizontal_wall_hit and x_dir == -1)
-    //    texel_intersect = 63 - texel_intersect;
-    //if (!horizontal_wall_hit and y_dir == 1)
-    //    texel_intersect = 63 - texel_intersect;
+    const texture_width = 64;
+    var texel_intersect = @floatToInt(u32, @mod(texel_intersect_coord, cell_size));
+    if (vertical_wall_hit and x_dir == -1)
+        texel_intersect = (texture_width - 1) - texel_intersect;
+    if (!vertical_wall_hit and y_dir == 1)
+        texel_intersect = (texture_width - 1) - texel_intersect;
 
     return RayCastResult{
         .map_x = @intCast(u32, x_walk_cell),
         .map_y = @intCast(u32, y_walk_cell),
         .distance = distance,
-        .horizontal_wall = horizontal_wall_hit,
+        .vertical_wall = vertical_wall_hit,
         .wall_type = wall_type,
-        .texel_intersect = @floatToInt(u32, texel_intersect),
+        .texel_intersect = texel_intersect,
     };
 }
 
@@ -283,7 +284,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 9);
     testing.expect(result.map_y == 4);
-    testing.expect(result.horizontal_wall == true);
+    testing.expect(result.vertical_wall == true);
     testing.expect(result.distance == 256);
 
     player_angle = 90;
@@ -291,7 +292,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 5);
     testing.expect(result.map_y == 0);
-    testing.expect(result.horizontal_wall == false);
+    testing.expect(result.vertical_wall == false);
     testing.expect(result.distance == 256);
 
     player_angle = 180;
@@ -299,7 +300,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 0);
     testing.expect(result.map_y == 5);
-    testing.expect(result.horizontal_wall == true);
+    testing.expect(result.vertical_wall == true);
     testing.expect(result.distance == 256);
 
     player_angle = 270;
@@ -307,7 +308,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 5);
     testing.expect(result.map_y == 9);
-    testing.expect(result.horizontal_wall == false);
+    testing.expect(result.vertical_wall == false);
     testing.expect(result.distance == 256);
 
     player_angle = 45;
@@ -315,7 +316,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 8);
     testing.expect(result.map_y == 0);
-    testing.expect(result.horizontal_wall == false);
+    testing.expect(result.vertical_wall == false);
     testing.expect(@floor(result.distance) == 362);
 
     player_angle = 135;
@@ -323,7 +324,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 1);
     testing.expect(result.map_y == 0);
-    testing.expect(result.horizontal_wall == false);
+    testing.expect(result.vertical_wall == false);
     testing.expect(@floor(result.distance) == 362);
 
     player_angle = 225;
@@ -331,7 +332,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 0);
     testing.expect(result.map_y == 8);
-    testing.expect(result.horizontal_wall == true);
+    testing.expect(result.vertical_wall == true);
     testing.expect(@floor(result.distance) == 362);
 
     player_angle = 315;
@@ -339,7 +340,7 @@ test "DDA - A bunch of loose direction tests" {
 
     testing.expect(result.map_x == 8);
     testing.expect(result.map_y == 9);
-    testing.expect(result.horizontal_wall == false);
+    testing.expect(result.vertical_wall == false);
     testing.expect(@floor(result.distance) == 362);
 }
 
