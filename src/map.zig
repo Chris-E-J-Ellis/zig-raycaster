@@ -2,7 +2,6 @@ const std = @import("std");
 const testing = std.testing;
 
 // Not really interested in big maps or allocation for the moment.
-
 pub const Map = struct {
     width: u32,
     height: u32,
@@ -19,13 +18,15 @@ pub const Map = struct {
     }
 
     /// Load a map that looks something like:
+    /// ```
     /// width = 3
     /// height = 3
     /// data = [
     ///     1, 1, 1
     ///     1, 0, 1
     ///     1, 1, 1
-    ///]
+    /// ]
+    /// ```
     pub fn createFromFile(filename: []const u8) !Map {
         var pathBuffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const file_path = try std.fs.realpath(filename, &pathBuffer);
@@ -75,8 +76,8 @@ pub const Map = struct {
     }
 };
 
-// Testing...testing.
-test "Can load a map from a file" {
+test "Try loading a map" {
     const map = try Map.createFromFile("data/map1.map");
-    testing.expect(true);
+    testing.expectEqual(@as(u32, 20), map.width);
+    testing.expectEqual(@as(u32, 20), map.height);
 }

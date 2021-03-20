@@ -78,41 +78,57 @@ fn drawFloorAndCeiling(self: *Renderer) void {
 }
 
 fn drawCenteredColumn(self: *Renderer, x: usize, height: usize, colour: u32) void {
-    var draw_y: usize = 0;
-    var draw_y_start = @as(usize, @divFloor(screen_height - height, 2));
+    const draw_height = if (height < screen_height) height else screen_height;
+    const draw_y_start = if (height < screen_height) @as(usize, @divFloor(screen_height - height, 2)) else 0;
 
-    while (draw_y < height) : (draw_y += 1) {
+    var draw_y: usize = 0;
+    while (draw_y < draw_height) : (draw_y += 1) {
         back_buffer[x + (draw_y + draw_y_start) * screen_width] = colour;
     }
 }
 
 fn drawCenteredTexturedColumn(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
-    const draw_height = if (height > screen_height) screen_height else height;
-    const texel_start_offset = if (height > screen_height) @divFloor(height - screen_height, 2) else 0;
-    const back_buffer_offset = if (height < screen_height) @divFloor(screen_height - height, 2) else 0;
+    var texel_start_offset: f32 = 0;
+    var back_buffer_offset: f32 = 0;
+    var draw_height = height;
+
+    if (height > screen_height) {
+        draw_height = screen_height;
+        texel_start_offset = @intToFloat(f32, height - screen_height) / 2;
+    } else {
+        back_buffer_offset = @intToFloat(f32, screen_height - height) / 2;
+
+        // A dirty hack to make texures look nicer, likely needs a dive into distance calc/floats.
+        if (height % 2 != 0) {
+            texel_start_offset += 0.5;
+            back_buffer_offset += 0.5;
+        }
+    }
 
     var draw_y: usize = 0;
     while (draw_y < draw_height) : (draw_y += 1) {
-        const texel_index = ((draw_y + texel_start_offset) * texels.len) / height;
-        const texel = texels[texel_index];
-        back_buffer[x + ((draw_y + back_buffer_offset) * screen_width)] = texel;
+        const texel_index = ((@intToFloat(f32, draw_y) + texel_start_offset) * @intToFloat(f32, texels.len)) / @intToFloat(f32, height);
+        var texel = texels[@floatToInt(usize, texel_index)];
+
+        back_buffer[x + ((draw_y + @floatToInt(usize, back_buffer_offset)) * screen_width)] = texel;
     }
 }
 
 fn drawCenteredTexturedColumnAlt(self: *Renderer, x: usize, height: usize, texels: []const u32) void {
-    const draw_start = if (height < screen_height) @divFloor(screen_height - height, 2) else 0;
-    const draw_end = if (height < screen_height) screen_height - @divFloor(screen_height - height, 2) else screen_height;
-    const texel_start_offset = if (height > screen_height) @divFloor(height - screen_height, 2) else 0;
-    var texel_index = (texel_start_offset * texels.len) / height;
+    const height_adjust = if (@mod(height, 2) == 0) height else height + 1;
+    const draw_start = if (height_adjust < screen_height) (screen_height - height_adjust) / 2 else 0;
+    const draw_end = if (height_adjust < screen_height) screen_height - (screen_height - height_adjust) / 2 else screen_height;
+    const texel_scale = @intToFloat(f32, texels.len) / @intToFloat(f32, height_adjust);
+    const texel_start_offset = if (height_adjust > screen_height) @intToFloat(f32, height_adjust - screen_height) / 2 else 0;
+    var texel_index = texel_start_offset * texel_scale;
 
     var count: usize = 0;
     var draw_y = draw_start;
     while (draw_y < draw_end) : ({
         draw_y += 1;
-        count += 1;
+        texel_index += texel_scale;
     }) {
-        const texel = texels[texel_index];
+        const texel = texels[@floatToInt(usize, texel_index)];
         back_buffer[x + draw_y * screen_width] = texel;
-        texel_index = (texel_start_offset + count) * texels.len / height;
     }
 }

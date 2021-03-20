@@ -5,6 +5,7 @@ const Renderer = @import("renderer.zig");
 usingnamespace @import("map.zig");
 
 const texture_height = @import("texture.zig").texture_height;
+const texture_width = @import("texture.zig").texture_height;
 const cell_size = 64;
 const speed_scale = 4;
 const rads_per_deg: f32 = std.math.tau / 360.0;
@@ -19,11 +20,18 @@ pub const GameState = struct {
     fov: u32,
     map: Map,
     textures: [10]Texture,
+    draw_textures: bool,
 
     pub fn initDefault(width: usize, height: usize) !GameState {
+        var map = Map{
+            .width = 4,
+            .height = 4,
+            .data = [_]u8{0} ** 1000,
+        };
+        map.populateEdges();
         return GameState{
-            .player_x = (64 * 2) + 32,
-            .player_y = (64 * 2) + 32,
+            .player_x = (cell_size * 2) + 63,
+            .player_y = (cell_size * 2) + 32,
             .player_angle = 0,
             .fov = 60,
             .map = try Map.createFromFile("data/map1.map"),
@@ -31,6 +39,7 @@ pub const GameState = struct {
             .screen_height = height,
             .distance_to_projection_plane = @intToFloat(f32, width / 2) / std.math.tan(rads_per_deg * 30),
             .textures = try Texture.loadTextures(),
+            .draw_textures = true,
         };
     }
 };
@@ -55,18 +64,25 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
         const rayCastResult = castRay(state.map, state.player_x, state.player_y, render_angle);
 
         const viewing_angle = std.math.absFloat(player_angle - render_angle);
-        var height = calcHeight(state, rayCastResult.distance, viewing_angle);
+        var height = calcHeight(state.distance_to_projection_plane, rayCastResult.distance, viewing_angle);
 
-        // Draw to screen, could save some effort by precomputing these darkened texels.
-        var texture = state.textures[rayCastResult.wall_type];
-        const texel_index = rayCastResult.texel_intersect * texture.height;
-        const texels = texture.data[texel_index .. texel_index + texture.height];
-        var tex_buf: [texture_height]u32 = undefined;
-        for (tex_buf) |*texel, i| {
-            // Darken and remove errant bits if required
-            texel.* = if (!rayCastResult.vertical_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
+        if (state.draw_textures) {
+
+            // Draw to screen, could save some effort by precomputing these darkened texels.
+            const texture = state.textures[rayCastResult.wall_type];
+            const texel_index = rayCastResult.texel_intersect * texture.height;
+            const texels = texture.data[texel_index .. texel_index + texture.height];
+            var tex_buf: [texture_height]u32 = undefined;
+            for (tex_buf) |*texel, i| {
+                // Darken and remove errant bits if required
+                texel.* = if (!rayCastResult.vertical_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
+            }
+
+            renderer.drawCenteredTexturedColumn(column_render_count, height, tex_buf[0..]);
+        } else {
+            const color: u32 = if (rayCastResult.vertical_wall) 0x555555 else 0xAAAAAA;
+            renderer.drawCenteredColumn(column_render_count, height, color);
         }
-        renderer.drawCenteredTexturedColumn(column_render_count, height, tex_buf[0..]);
 
         // Increment angle
         render_angle = wrapAngle(f32, render_angle - column_angle);
@@ -149,11 +165,8 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
         (distance * cos_theta) + @intToFloat(f32, start_x);
 
     // Flip texture depending on direction.
-    const texture_width = 64;
     var texel_intersect = @floatToInt(u32, @mod(texel_intersect_coord, cell_size));
-    if (vertical_wall_hit and x_dir == -1)
-        texel_intersect = (texture_width - 1) - texel_intersect;
-    if (!vertical_wall_hit and y_dir == 1)
+    if ((vertical_wall_hit and x_dir == -1) or (!vertical_wall_hit and y_dir == 1))
         texel_intersect = (texture_width - 1) - texel_intersect;
 
     return RayCastResult{
@@ -168,15 +181,14 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
 
 /// One method of calculating column height, uses component of view angle.
 /// I think there's a small curve issue somewhere here, but that's a job for later =D
-pub fn calcHeight(state: *GameState, distance: f32, viewing_angle: f32) u32 {
+fn calcHeight(distance_to_projection_plane: f32, distance: f32, viewing_angle: f32) u32 {
     var view_corrected_distance = distance * std.math.cos(viewing_angle * rads_per_deg);
 
     // Collision detection can remove this check
     if (view_corrected_distance == 0)
         view_corrected_distance += 0.01;
 
-    const col_height = @floatToInt(u32, cell_size / view_corrected_distance * state.distance_to_projection_plane);
-    //const clamped_height = std.math.clamp(col_height, 0, @intCast(u32, state.screen_height));
+    const col_height = @floatToInt(u32, cell_size / view_corrected_distance * distance_to_projection_plane);
 
     return col_height;
 }
@@ -212,17 +224,23 @@ pub fn moveBackward(state: *GameState) void {
     state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
     state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
 }
+
 pub fn strafeLeft(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
     state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
     state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
 }
+
 pub fn strafeRight(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
     state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
     state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+}
+
+pub fn toggleTextures(state: *GameState) void {
+    state.draw_textures = !state.draw_textures;
 }
 
 pub fn tick(state: *const GameState) void {
@@ -240,7 +258,7 @@ fn wrapAngle(comptime T: type, angle: T) T {
     }
 }
 
-test "DDA - Sort my texture issue out" {
+test "DDA - Light texel position testing" {
     var map = Map{
         .width = 4,
         .height = 4,
@@ -248,24 +266,43 @@ test "DDA - Sort my texture issue out" {
     };
     map.populateEdges();
 
-    var start_x: u32 = (cell_size * 1) + cell_size;
-    var start_y: u32 = (cell_size * 1) + cell_size + 2;
-    var player_angle: f32 = 2;
-    var result = castRay(map, start_x, start_y, player_angle);
-    std.debug.print("int: {}, dist {}", .{ result.texel_intersect, result.distance });
+    const start_x: u32 = (cell_size * 1) + cell_size;
+    const start_y: u32 = (cell_size * 1) + cell_size + 0;
+    var angle: f32 = 359.0;
+    var result = castRay(map, start_x, start_y, angle);
+
+    result = castRay(map, start_x, start_y, angle);
+    testing.expectEqual(result.texel_intersect, 1);
+
+    angle = 0.0;
+    result = castRay(map, start_x, start_y, angle);
+    testing.expectEqual(result.texel_intersect, 0);
+
+    angle = 0.8;
+    result = castRay(map, start_x, start_y, angle);
+    testing.expectEqual(result.texel_intersect, 63);
+}
+
+test "DDA - Scan the wall and check the texture intersect" {
+    var map = Map{
+        .width = 4,
+        .height = 4,
+        .data = [_]u8{0} ** 1000,
+    };
+    map.populateEdges();
+
+    const start_x: u32 = (cell_size * 1);
+    const start_y: u32 = (cell_size * 1);
+    const angle: f32 = 0;
+    var result = castRay(map, start_x, start_y, angle);
     std.debug.print("\n", .{});
 
-    while (player_angle <= 2 or player_angle > 358) {
-        result = castRay(map, start_x, start_y, player_angle);
-        //std.debug.print("{}", .{result});
-        std.debug.print("ang: {d: >6.2}, inter: {d: >2}, dist {d: >5.2}", .{ player_angle, result.texel_intersect, result.distance });
-        std.debug.print("\n", .{});
-        player_angle = wrapAngle(f32, player_angle - 0.2);
+    var current_x = start_x;
+    while (current_x < start_x + cell_size) : (current_x += 1) {
+        result = castRay(map, current_x, start_y, angle);
+        const expected_texel_intersect = @mod(current_x, texture_height);
+        testing.expectEqual(expected_texel_intersect, result.texel_intersect);
     }
-
-    std.debug.print("\n", .{});
-
-    testing.expect(true);
 }
 
 test "DDA - A bunch of loose direction tests" {
@@ -276,8 +313,8 @@ test "DDA - A bunch of loose direction tests" {
     };
     map.populateEdges();
 
-    var start_x: u32 = (cell_size * 5);
-    var start_y: u32 = (cell_size * 5);
+    const start_x: u32 = (cell_size * 5);
+    const start_y: u32 = (cell_size * 5);
     var player_angle: f32 = 0.0;
 
     var result = castRay(map, start_x, start_y, player_angle);

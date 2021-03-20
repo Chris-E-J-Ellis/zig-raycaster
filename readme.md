@@ -17,8 +17,20 @@ Using inspiration from a few sources:
 - Windows - I was using the MinGW version of SDL2 (see build.zig)
     - Headers in "deps/include"
     - Libs in "deps/lib"
-    - This seems fine on Zig 0.6.0, but in 0.7.0 trying to link the mingw SDL2 library seems to fall over while trying to locate SDL2.lib, it seems my gnu target is not being respected and it's attempting to use msvc.
+    - This seems fine on Zig 0.6.0, but in 0.7.0+ trying to link the mingw SDL2 library seems to fall over while trying to locate SDL2.lib, it seems my gnu target is not being respected and it's attempting to use msvc.
+        - Reported as [this bug](https://github.com/ziglang/zig/issues/7799). Until it's fixed you can link against the `SDL2-devel-x-VC.zip` packages, and ensure `SDL2.dll` is present.
+- Wolf3D Textures aren't distributed with this repo, a default error texture will be used if they can't be loaded.
+- Textures with the following names should exist in the `data` folder:
+    - bluestone.bmp
+    - wood.bmp
+    - eagle.bmp
+    - greystone.bmp
+    - colorstone.bmp
+    - redbrick.bmp
+    - mossy.bmp
+    - purplestone.bmp
 - Enjoy!
 
 ![Small demo](/demo-small.gif)
 ![Small Textured demo](/demo-small-textured.gif)
+![Small Wolf3D Textured demo](/demo-small-wolf3d-textured.gif)

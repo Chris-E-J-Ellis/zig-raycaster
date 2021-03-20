@@ -89,6 +89,7 @@ pub const ScanCode = enum(c_int) {
     k = sdl.SDL_SCANCODE_K,
     l = sdl.SDL_SCANCODE_L,
     s = sdl.SDL_SCANCODE_S,
+    t = sdl.SDL_SCANCODE_T,
     w = sdl.SDL_SCANCODE_W,
     x = sdl.SDL_SCANCODE_X,
 };

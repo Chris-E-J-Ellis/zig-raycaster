@@ -10,8 +10,8 @@ pub fn main() anyerror!void {
     defer arena.deinit();
     var allocator = &arena.allocator;
 
-    const width: usize = 640;
-    const height: usize = 400;
+    const width: usize = 320;
+    const height: usize = 200;
 
     var sdl_renderer = try SDLRenderer.init(width, height, allocator);
     defer sdl_renderer.deinit();
@@ -70,8 +70,11 @@ pub fn processInput(state: *engine.GameState) bool {
         engine.strafeRight(state);
 
     if (keys.isPressed(.i)) {
-        //std.debug.print("state {}\n", .{state});
-        std.debug.print("state {}\n", .{state.player_angle});
+        std.debug.print("state {}\n", .{state});
+    }
+
+    if (keys.isPressed(.t)) {
+        engine.toggleTextures(state);
     }
 
     if (keys.isPressed(.x)) {
