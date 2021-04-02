@@ -6,18 +6,19 @@ usingnamespace @import("map.zig");
 const SDLRenderer = @import("sdl_renderer.zig");
 
 pub fn main() anyerror!void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.c_allocator);
-    defer arena.deinit();
-    var allocator = &arena.allocator;
+    var gp = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
+    defer _ = gp.deinit();
+    var allocator = &gp.allocator;
 
     const width: usize = 320;
     const height: usize = 200;
 
     var sdl_renderer = try SDLRenderer.init(width, height, allocator);
-    defer sdl_renderer.deinit();
+    defer sdl_renderer.deinit(allocator);
     var renderer = &sdl_renderer.renderer;
 
-    var state = try engine.GameState.initDefault(width, height);
+    var state = try engine.GameState.initDefault(allocator, width, height);
+    defer state.deinit();
 
     var time: i128 = 0;
     var old_time: i128 = 0;

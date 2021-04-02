@@ -2,6 +2,8 @@ const std = @import("std");
 const sdl_wrapper = @import("sdl_wrapper.zig");
 
 const Renderer = @import("renderer.zig");
+const default_screen_height = 640;
+const default_screen_width = 400;
 
 var floor_and_ceiling_buffer: []u32 = undefined;
 var back_buffer: []u32 = undefined;
@@ -24,7 +26,7 @@ pub fn init(width: usize, height: usize, allocator: *std.mem.Allocator) !SDLRend
     floor_and_ceiling_buffer = try allocator.alloc(u32, (screen_width * screen_height));
 
     try sdl_wrapper.initVideo();
-    screen = try sdl_wrapper.createWindow(width, height);
+    screen = try sdl_wrapper.createWindow(default_screen_height, default_screen_width);
     renderer = try sdl_wrapper.createRendererFromWindow(screen);
     surface = try sdl_wrapper.createRGBSurface(width, height);
     texture = try sdl_wrapper.createTextureFromSurface(renderer, surface);
@@ -41,7 +43,9 @@ pub fn init(width: usize, height: usize, allocator: *std.mem.Allocator) !SDLRend
     };
 }
 
-pub fn deinit(self: *SDLRenderer) void {
+pub fn deinit(self: *SDLRenderer, allocator: *std.mem.Allocator) void {
+    allocator.free(back_buffer);
+    allocator.free(floor_and_ceiling_buffer);
     sdl_wrapper.destroyTexture(texture);
     sdl_wrapper.freeSurface(surface);
     sdl_wrapper.destroyRenderer(renderer);

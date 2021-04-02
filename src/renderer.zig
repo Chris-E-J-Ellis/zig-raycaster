@@ -1,6 +1,7 @@
 const Renderer = @This();
 
 /// My crack at some kind of interface
+/// Not quite "correct" because I have only ever have renderer instance and no need to use `@fieldParentPtr`
 drawFloorAndCeilingFn: fn (self: *Renderer) void,
 drawCenteredColumnFn: fn (self: *Renderer, x: usize, height: usize, colour: u32) void,
 drawCenteredTexturedColumnFn: fn (self: *Renderer, x: usize, height: usize, texels: []const u32) void,

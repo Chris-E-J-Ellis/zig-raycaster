@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const Renderer = @import("renderer.zig");
@@ -9,8 +10,10 @@ const texture_width = @import("texture.zig").texture_height;
 const cell_size = 64;
 const speed_scale = 4;
 const rads_per_deg: f32 = std.math.tau / 360.0;
+const default_fov = 60;
 
 pub const GameState = struct {
+    allocator: *Allocator,
     screen_width: usize,
     screen_height: usize,
     distance_to_projection_plane: f32,
@@ -19,28 +22,34 @@ pub const GameState = struct {
     player_angle: u32,
     fov: u32,
     map: Map,
-    textures: [10]Texture,
+    textures: []Texture,
     draw_textures: bool,
 
-    pub fn initDefault(width: usize, height: usize) !GameState {
-        var map = Map{
-            .width = 4,
-            .height = 4,
-            .data = [_]u8{0} ** 1000,
-        };
-        map.populateEdges();
+    pub fn initDefault(allocator: *Allocator, width: usize, height: usize) !GameState {
         return GameState{
-            .player_x = (cell_size * 2) + 63,
-            .player_y = (cell_size * 2) + 32,
+            .allocator = allocator,
+            .player_x = (cell_size * 2),
+            .player_y = (cell_size * 2),
             .player_angle = 0,
-            .fov = 60,
-            .map = try Map.createFromFile("data/map1.map"),
+            .fov = default_fov,
+            .map = try Map.createFromFile(allocator, "data/map1.map"),
+            //.map = try Map.createEmpty(allocator, 10, 10),
             .screen_width = width,
             .screen_height = height,
-            .distance_to_projection_plane = @intToFloat(f32, width / 2) / std.math.tan(rads_per_deg * 30),
-            .textures = try Texture.loadTextures(),
+            .distance_to_projection_plane = @intToFloat(f32, width / 2) / std.math.tan(rads_per_deg * default_fov / 2),
+            .textures = try Texture.loadTextures(allocator),
+            //.textures = try Texture.loadPlaceholderTextures(allocator),
             .draw_textures = true,
         };
+    }
+
+    pub fn deinit(self: *GameState) void {
+        self.map.deinit();
+
+        for (self.textures) |*texture| {
+            texture.deinit();
+        }
+        self.allocator.free(self.textures);
     }
 };
 
@@ -259,12 +268,9 @@ fn wrapAngle(comptime T: type, angle: T) T {
 }
 
 test "DDA - Light texel position testing" {
-    var map = Map{
-        .width = 4,
-        .height = 4,
-        .data = [_]u8{0} ** 1000,
-    };
-    map.populateEdges();
+    const allocator = std.testing.allocator;
+    var map = try Map.createEmpty(allocator, 4, 4);
+    defer map.deinit();
 
     const start_x: u32 = (cell_size * 1) + cell_size;
     const start_y: u32 = (cell_size * 1) + cell_size + 0;
@@ -284,12 +290,9 @@ test "DDA - Light texel position testing" {
 }
 
 test "DDA - Scan the wall and check the texture intersect" {
-    var map = Map{
-        .width = 4,
-        .height = 4,
-        .data = [_]u8{0} ** 1000,
-    };
-    map.populateEdges();
+    const allocator = std.testing.allocator;
+    var map = try Map.createEmpty(allocator, 4, 4);
+    defer map.deinit();
 
     const start_x: u32 = (cell_size * 1);
     const start_y: u32 = (cell_size * 1);
@@ -306,12 +309,9 @@ test "DDA - Scan the wall and check the texture intersect" {
 }
 
 test "DDA - A bunch of loose direction tests" {
-    var map = Map{
-        .width = 10,
-        .height = 10,
-        .data = [_]u8{0} ** 1000,
-    };
-    map.populateEdges();
+    const allocator = std.testing.allocator;
+    var map = try Map.createEmpty(allocator, 10, 10);
+    defer map.deinit();
 
     const start_x: u32 = (cell_size * 5);
     const start_y: u32 = (cell_size * 5);

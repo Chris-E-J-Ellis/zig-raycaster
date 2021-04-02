@@ -1,18 +1,22 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
-// Not really interested in big maps or allocation for the moment.
 pub const Map = struct {
+    allocator: *Allocator, // This should probably go in some kind of Map manager, but I'm only using one map =D
     width: u32,
     height: u32,
-    data: [1000]u8,
+    data: []u8,
 
-    pub fn createEmpty(width: u32, height: u32) Map {
+    pub fn createEmpty(allocator: *Allocator, width: u32, height: u32) !Map {
         var map = Map{
+            .allocator = allocator,
             .width = width,
             .height = height,
-            .data = [_]u8{0} ** 1000,
+            .data = try allocator.alloc(u8, width * height),
         };
+        for (map.data) |*byte|
+            byte.* = 0x00;
         map.populateEdges();
         return map;
     }
@@ -27,16 +31,18 @@ pub const Map = struct {
     ///     1, 1, 1
     /// ]
     /// ```
-    pub fn createFromFile(filename: []const u8) !Map {
+    pub fn createFromFile(allocator: *Allocator, filename: []const u8) !Map {
         var pathBuffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const file_path = try std.fs.realpath(filename, &pathBuffer);
 
-        var fileBuffer: [2000]u8 = undefined;
         const file = try std.fs.openFileAbsolute(file_path, .{ .read = true });
         defer file.close();
 
-        const length = try file.readAll(&fileBuffer);
-        var it = std.mem.split(fileBuffer[0..length], "\n");
+        const max_buffer_size = 2000;
+        const file_buffer = try file.readToEndAlloc(allocator, max_buffer_size);
+        defer allocator.free(file_buffer);
+
+        var it = std.mem.split(file_buffer, "\n");
         const widthLine = it.next().?;
         const heightLine = it.next().?;
         const widthToken = std.mem.tokenize(widthLine, "width =").next().?;
@@ -45,7 +51,10 @@ pub const Map = struct {
         const width = try std.fmt.parseInt(u32, widthToken, radix);
         const height = try std.fmt.parseInt(u32, heightToken, radix);
 
-        var mapBuffer: [1000]u8 = [_]u8{0} ** 1000;
+        var mapDataSize: usize = width * height;
+        var mapBuffer = try allocator.alloc(u8, mapDataSize);
+        errdefer allocator.free(mapBuffer);
+
         const dataBytes = it.rest();
         var dataCount: usize = 0;
         for (dataBytes) |byte, index| {
@@ -57,6 +66,7 @@ pub const Map = struct {
         }
 
         var map = Map{
+            .allocator = allocator,
             .width = width,
             .height = height,
             .data = mapBuffer,
@@ -67,17 +77,24 @@ pub const Map = struct {
         return map;
     }
 
-    pub fn populateEdges(map: *Map) void {
-        for (map.data) |*item, index| {
-            if (index < map.width or index % map.width == 0 or index % map.width == map.width - 1 or index > (map.width * map.height - map.width)) {
+    pub fn populateEdges(self: *Map) void {
+        for (self.data) |*item, index| {
+            if (index < self.width or index % self.width == 0 or index % self.width == self.width - 1 or index > (self.width * self.height - self.width)) {
                 item.* = 1;
             }
         }
     }
+
+    pub fn deinit(self: *Map) void {
+        self.allocator.free(self.data);
+    }
 };
 
 test "Try loading a map" {
-    const map = try Map.createFromFile("data/map1.map");
+    var allocator = std.testing.allocator;
+    var map = try Map.createFromFile(allocator, "data/map1.map");
+    defer map.deinit();
     testing.expectEqual(@as(u32, 20), map.width);
     testing.expectEqual(@as(u32, 20), map.height);
+    testing.expectEqual(@as(usize, 400), map.data.len);
 }
