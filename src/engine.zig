@@ -2,7 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
-const Renderer = @import("renderer.zig");
+const Renderer = @import("Renderer.zig");
 usingnamespace @import("map.zig");
 
 const texture_height = @import("texture.zig").texture_height;

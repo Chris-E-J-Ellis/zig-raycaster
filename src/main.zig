@@ -3,7 +3,7 @@ const engine = @import("engine.zig");
 const sdl_wrapper = @import("sdl_wrapper.zig");
 usingnamespace @import("map.zig");
 
-const SDLRenderer = @import("sdl_renderer.zig");
+const SDLRenderer = @import("SDLRenderer.zig");
 
 pub fn main() anyerror!void {
     var gp = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
@@ -14,7 +14,7 @@ pub fn main() anyerror!void {
     const height: usize = 200;
 
     var sdl_renderer = try SDLRenderer.init(width, height, allocator);
-    defer sdl_renderer.deinit(allocator);
+    defer sdl_renderer.deinit();
     var renderer = &sdl_renderer.renderer;
 
     var state = try engine.GameState.initDefault(allocator, width, height);
