@@ -6,37 +6,44 @@ const Renderer = @import("Renderer.zig");
 const default_screen_height = 640;
 const default_screen_width = 400;
 
-var floor_and_ceiling_buffer: []u32 = undefined;
-var back_buffer: []u32 = undefined;
-var sdl_screen: *sdl_wrapper.Window = undefined;
-var sdl_surface: *sdl_wrapper.Surface = undefined;
-var sdl_texture: *sdl_wrapper.Texture = undefined;
-var sdl_renderer: *sdl_wrapper.Renderer = undefined;
-var screen_width: usize = undefined;
-var screen_height: usize = undefined;
-
-// Follow a similar pattern to the Allocators, I guess this filename should be 'SDLRenderer.zig'
 pub const SDLRenderer = @This();
 
 allocator: *Allocator,
 renderer: Renderer,
+floor_and_ceiling_buffer: []u32,
+back_buffer: []u32,
+sdl_screen: *sdl_wrapper.Window,
+sdl_surface: *sdl_wrapper.Surface,
+sdl_texture: *sdl_wrapper.Texture,
+sdl_renderer: *sdl_wrapper.Renderer,
+screen_width: usize = default_screen_height,
+screen_height: usize = default_screen_width,
 
 pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
-    screen_width = width;
-    screen_height = height;
-    back_buffer = try allocator.alloc(u32, (screen_width * screen_height));
-    floor_and_ceiling_buffer = try allocator.alloc(u32, (screen_width * screen_height));
+    const back_buffer = try allocator.alloc(u32, (width * height));
+    errdefer allocator.free(back_buffer);
+
+    const floor_and_ceiling_buffer = try allocator.alloc(u32, (width * height));
+    errdefer allocator.free(floor_and_ceiling_buffer);
 
     try sdl_wrapper.initVideo();
-    sdl_screen = try sdl_wrapper.createWindow(default_screen_height, default_screen_width);
-    sdl_renderer = try sdl_wrapper.createRendererFromWindow(sdl_screen);
-    sdl_surface = try sdl_wrapper.createRGBSurface(width, height);
-    sdl_texture = try sdl_wrapper.createTextureFromSurface(sdl_renderer, sdl_surface);
+    const sdl_screen = try sdl_wrapper.createWindow(default_screen_height, default_screen_width);
+    const sdl_renderer = try sdl_wrapper.createRendererFromWindow(sdl_screen);
+    const sdl_surface = try sdl_wrapper.createRGBSurface(width, height);
+    const sdl_texture = try sdl_wrapper.createTextureFromSurface(sdl_renderer, sdl_surface);
 
-    initialiseFloorAndSkyBuffer(width, height);
+    initialiseFloorAndSkyBuffer(width, height, floor_and_ceiling_buffer);
 
     return SDLRenderer{
         .allocator = allocator,
+        .back_buffer = back_buffer,
+        .floor_and_ceiling_buffer = floor_and_ceiling_buffer,
+        .screen_width = width,
+        .screen_height = height,
+        .sdl_screen = sdl_screen,
+        .sdl_renderer = sdl_renderer,
+        .sdl_surface = sdl_surface,
+        .sdl_texture = sdl_texture,
         .renderer = Renderer{
             .drawFloorAndCeilingFn = drawFloorAndCeiling,
             .drawCenteredColumnFn = drawCenteredColumn,
@@ -47,20 +54,21 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
 }
 
 pub fn deinit(self: *SDLRenderer) void {
-    self.allocator.free(back_buffer);
-    self.allocator.free(floor_and_ceiling_buffer);
-    sdl_wrapper.destroyTexture(sdl_texture);
-    sdl_wrapper.freeSurface(sdl_surface);
-    sdl_wrapper.destroyRenderer(sdl_renderer);
-    sdl_wrapper.destroyWindow(sdl_screen);
+    self.allocator.free(self.back_buffer);
+    self.allocator.free(self.floor_and_ceiling_buffer);
+    sdl_wrapper.destroyTexture(self.sdl_texture);
+    sdl_wrapper.freeSurface(self.sdl_surface);
+    sdl_wrapper.destroyRenderer(self.sdl_renderer);
+    sdl_wrapper.destroyWindow(self.sdl_screen);
     sdl_wrapper.quit();
 }
 
 fn refreshScreen(renderer: *Renderer) void {
-    sdl_wrapper.refreshScreenWithBuffer(sdl_renderer, sdl_texture, back_buffer, screen_width);
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer); // Not sure what the overhead is here, just testing "interfaces" =D
+    sdl_wrapper.refreshScreenWithBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
 }
 
-fn initialiseFloorAndSkyBuffer(width: usize, height: usize) void {
+fn initialiseFloorAndSkyBuffer(width: usize, height: usize, buffer: []u32) void {
     const light_grey = 0x777777;
     const dark_grey = 0x333333;
     const halfway_index = height / 2;
@@ -70,7 +78,7 @@ fn initialiseFloorAndSkyBuffer(width: usize, height: usize) void {
         var x: usize = 0;
         while (x < width) : (x += 1) {
             const index = (y * width) + x;
-            floor_and_ceiling_buffer[index] = if (y > halfway_index)
+            buffer[index] = if (y > halfway_index)
                 light_grey
             else
                 dark_grey;
@@ -79,31 +87,34 @@ fn initialiseFloorAndSkyBuffer(width: usize, height: usize) void {
 }
 
 fn drawFloorAndCeiling(renderer: *Renderer) void {
-    for (floor_and_ceiling_buffer[0..floor_and_ceiling_buffer.len]) |i, dest| {
-        back_buffer[dest] = i;
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    for (self.floor_and_ceiling_buffer) |i, dest| {
+        self.back_buffer[dest] = i;
     }
 }
 
 fn drawCenteredColumn(renderer: *Renderer, x: usize, height: usize, colour: u32) void {
-    const draw_height = if (height < screen_height) height else screen_height;
-    const draw_y_start = if (height < screen_height) @as(usize, @divFloor(screen_height - height, 2)) else 0;
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    const draw_height = if (height < self.screen_height) height else self.screen_height;
+    const draw_y_start = if (height < self.screen_height) @as(usize, @divFloor(self.screen_height - height, 2)) else 0;
 
     var draw_y: usize = 0;
     while (draw_y < draw_height) : (draw_y += 1) {
-        back_buffer[x + (draw_y + draw_y_start) * screen_width] = colour;
+        self.back_buffer[x + (draw_y + draw_y_start) * self.screen_width] = colour;
     }
 }
 
 fn drawCenteredTexturedColumn(renderer: *Renderer, x: usize, height: usize, texels: []const u32) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     var texel_start_offset: f32 = 0;
     var back_buffer_offset: f32 = 0;
     var draw_height = height;
 
-    if (height > screen_height) {
-        draw_height = screen_height;
-        texel_start_offset = @intToFloat(f32, height - screen_height) / 2;
+    if (height > self.screen_height) {
+        draw_height = self.screen_height;
+        texel_start_offset = @intToFloat(f32, height - self.screen_height) / 2;
     } else {
-        back_buffer_offset = @intToFloat(f32, screen_height - height) / 2;
+        back_buffer_offset = @intToFloat(f32, self.screen_height - height) / 2;
 
         // A dirty hack to make texures look nicer, likely needs a dive into distance calc/floats.
         if (height % 2 != 0) {
@@ -117,16 +128,17 @@ fn drawCenteredTexturedColumn(renderer: *Renderer, x: usize, height: usize, texe
         const texel_index = ((@intToFloat(f32, draw_y) + texel_start_offset) * @intToFloat(f32, texels.len)) / @intToFloat(f32, height);
         var texel = texels[@floatToInt(usize, texel_index)];
 
-        back_buffer[x + ((draw_y + @floatToInt(usize, back_buffer_offset)) * screen_width)] = texel;
+        self.back_buffer[x + ((draw_y + @floatToInt(usize, back_buffer_offset)) * self.screen_width)] = texel;
     }
 }
 
 fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, texels: []const u32) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     const height_adjust = if (@mod(height, 2) == 0) height else height + 1;
-    const draw_start = if (height_adjust < screen_height) (screen_height - height_adjust) / 2 else 0;
-    const draw_end = if (height_adjust < screen_height) screen_height - (screen_height - height_adjust) / 2 else screen_height;
+    const draw_start = if (height_adjust < self.screen_height) (self.screen_height - height_adjust) / 2 else 0;
+    const draw_end = if (height_adjust < self.screen_height) self.screen_height - (self.screen_height - height_adjust) / 2 else self.screen_height;
     const texel_scale = @intToFloat(f32, texels.len) / @intToFloat(f32, height_adjust);
-    const texel_start_offset = if (height_adjust > screen_height) @intToFloat(f32, height_adjust - screen_height) / 2 else 0;
+    const texel_start_offset = if (height_adjust > self.screen_height) @intToFloat(f32, height_adjust - self.screen_height) / 2 else 0;
     var texel_index = texel_start_offset * texel_scale;
 
     var count: usize = 0;
@@ -136,6 +148,6 @@ fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, t
         texel_index += texel_scale;
     }) {
         const texel = texels[@floatToInt(usize, texel_index)];
-        back_buffer[x + draw_y * screen_width] = texel;
+        self.back_buffer[x + draw_y * self.screen_width] = texel;
     }
 }
