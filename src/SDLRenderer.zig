@@ -1,8 +1,8 @@
 const std = @import("std");
 const sdl_wrapper = @import("sdl_wrapper.zig");
 const Allocator = std.mem.Allocator;
-
 const Renderer = @import("Renderer.zig");
+
 const default_screen_height = 640;
 const default_screen_width = 400;
 
@@ -25,14 +25,21 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
 
     const floor_and_ceiling_buffer = try allocator.alloc(u32, (width * height));
     errdefer allocator.free(floor_and_ceiling_buffer);
+    initialiseFloorAndCeilingBuffer(width, height, floor_and_ceiling_buffer);
 
     try sdl_wrapper.initVideo();
-    const sdl_screen = try sdl_wrapper.createWindow(default_screen_height, default_screen_width);
-    const sdl_renderer = try sdl_wrapper.createRendererFromWindow(sdl_screen);
-    const sdl_surface = try sdl_wrapper.createRGBSurface(width, height);
-    const sdl_texture = try sdl_wrapper.createTextureFromSurface(sdl_renderer, sdl_surface);
 
-    initialiseFloorAndSkyBuffer(width, height, floor_and_ceiling_buffer);
+    const sdl_screen = try sdl_wrapper.createWindow(default_screen_height, default_screen_width);
+    errdefer sdl_wrapper.destroyWindow(sdl_screen);
+
+    const sdl_renderer = try sdl_wrapper.createRendererFromWindow(sdl_screen);
+    errdefer sdl_wrapper.destroyRenderer(sdl_renderer);
+
+    const sdl_surface = try sdl_wrapper.createRGBSurface(width, height);
+    errdefer sdl_wrapper.freeSurface(sdl_surface);
+
+    const sdl_texture = try sdl_wrapper.createTextureFromSurface(sdl_renderer, sdl_surface);
+    errdefer sdl_wrapper.destroyTexture(sdl_texture);
 
     return SDLRenderer{
         .allocator = allocator,
@@ -68,7 +75,7 @@ fn refreshScreen(renderer: *Renderer) void {
     sdl_wrapper.refreshScreenWithBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
 }
 
-fn initialiseFloorAndSkyBuffer(width: usize, height: usize, buffer: []u32) void {
+fn initialiseFloorAndCeilingBuffer(width: usize, height: usize, buffer: []u32) void {
     const light_grey = 0x777777;
     const dark_grey = 0x333333;
     const halfway_index = height / 2;
@@ -88,9 +95,7 @@ fn initialiseFloorAndSkyBuffer(width: usize, height: usize, buffer: []u32) void 
 
 fn drawFloorAndCeiling(renderer: *Renderer) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
-    for (self.floor_and_ceiling_buffer) |i, dest| {
-        self.back_buffer[dest] = i;
-    }
+    std.mem.copy(u32, self.back_buffer, self.floor_and_ceiling_buffer);
 }
 
 fn drawCenteredColumn(renderer: *Renderer, x: usize, height: usize, colour: u32) void {
