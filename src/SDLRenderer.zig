@@ -19,6 +19,7 @@ sdl_texture: *sdl_wrapper.Texture,
 sdl_renderer: *sdl_wrapper.Renderer,
 screen_width: usize = default_screen_height,
 screen_height: usize = default_screen_width,
+map_hackery: bool = false,
 
 pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
     const back_buffer = try allocator.alloc(u32, (width * height));
@@ -77,6 +78,8 @@ pub fn deinit(self: *SDLRenderer) void {
 
 fn updateBuffer(renderer: *Renderer) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer); // Not sure what the overhead is here, just testing "interfaces" =D
+    if (self.map_hackery)
+        return;
     sdl_wrapper.renderBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
 }
 
@@ -174,12 +177,16 @@ fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, t
 
 pub fn drawRect(renderer: *Renderer, x: usize, y: usize, width: usize, height: usize, colour: Colour) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    if (!self.map_hackery)
+        return;
     const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
     sdl_wrapper.drawRect(self.sdl_renderer, x, y, width, height, sdl_color);
 }
 
 pub fn drawLine(renderer: *Renderer, x1: usize, y1: usize, x2: usize, y2: usize, colour: Colour) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    if (!self.map_hackery)
+        return;
     const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
     sdl_wrapper.drawLine(self.sdl_renderer, x1, y1, x2, y2, sdl_color);
 }

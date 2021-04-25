@@ -17,6 +17,11 @@ pub fn main() anyerror!void {
     defer sdl_renderer.deinit();
     var renderer = &sdl_renderer.renderer;
 
+    var sdl_renderer_2 = try SDLRenderer.init(width, height, allocator);
+    defer sdl_renderer_2.deinit();
+    var renderer2 = &sdl_renderer_2.renderer;
+    sdl_renderer_2.map_hackery = true;
+
     var state = try engine.GameState.initDefault(allocator, width, height);
     defer state.deinit();
 
@@ -32,6 +37,7 @@ pub fn main() anyerror!void {
             break;
         engine.tick(&state);
         engine.draw(&state, renderer);
+        engine.draw(&state, renderer2);
 
         // Quick and dirty cap at ~60FPs.
         old_time = time;
