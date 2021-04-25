@@ -8,6 +8,8 @@ pub const Window = sdl.SDL_Window;
 pub const Renderer = sdl.SDL_Renderer;
 pub const Texture = sdl.SDL_Texture;
 pub const Surface = sdl.SDL_Surface;
+pub const Rect = sdl.SDL_Rect;
+pub const Color = sdl.SDL_Color;
 
 const SDL_WINDOWPOS_UNDEFINED = @bitCast(c_int, sdl.SDL_WINDOWPOS_UNDEFINED_MASK);
 
@@ -56,10 +58,28 @@ pub fn createTextureFromSurface(renderer: *sdl.SDL_Renderer, surface: *sdl.SDL_S
 pub fn refreshScreenWithBuffer(renderer: *sdl.SDL_Renderer, texture: *sdl.SDL_Texture, buffer: []u32, width: usize) void {
     const bytesPerPixel = 4;
     const pitch = @intCast(c_int, width * bytesPerPixel);
-    _ = sdl.SDL_UpdateTexture(texture, null, &buffer[0], pitch);
-    _ = sdl.SDL_RenderClear(renderer);
-    _ = sdl.SDL_RenderCopy(renderer, texture, null, null);
+    //_ = sdl.SDL_UpdateTexture(texture, null, &buffer[0], pitch);
+    //_ = sdl.SDL_RenderClear(renderer);
+    //_ = sdl.SDL_RenderCopy(renderer, texture, null, null);
     _ = sdl.SDL_RenderPresent(renderer);
+}
+
+pub fn clearScreen(renderer: *sdl.SDL_Renderer) void {
+    _ = sdl.SDL_RenderClear(renderer);
+}
+
+pub fn drawRect(renderer: *sdl.SDL_Renderer, x: usize, y: usize, width: usize, height: usize, color: Color) void {
+    const rect = Rect{ .x = @intCast(c_int, x), .y = @intCast(c_int, y), .w = @intCast(c_int, width), .h = @intCast(c_int, height) };
+
+    _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    _ = sdl.SDL_RenderDrawRect(renderer, &rect);
+    _ = sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
+
+pub fn drawLine(renderer: *sdl.SDL_Renderer, x1: usize, y1: usize, x2: usize, y2: usize, color: Color) void {
+    _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    _ = sdl.SDL_RenderDrawLine(renderer, @intCast(c_int, x1), @intCast(c_int, y1), @intCast(c_int, x2), @intCast(c_int, y2));
+    _ = sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }
 
 pub fn destroyTexture(texture: *sdl.SDL_Texture) void {

@@ -2,6 +2,7 @@ const std = @import("std");
 const sdl_wrapper = @import("sdl_wrapper.zig");
 const Allocator = std.mem.Allocator;
 const Renderer = @import("Renderer.zig");
+const Colour = Renderer.Colour;
 
 const default_screen_height = 640;
 const default_screen_width = 400;
@@ -55,7 +56,10 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
             .drawFloorAndCeilingFn = drawFloorAndCeiling,
             .drawCenteredColumnFn = drawCenteredColumn,
             .drawCenteredTexturedColumnFn = drawCenteredTexturedColumn,
+            .drawRectFn = drawRect,
+            .drawLineFn = drawLine,
             .refreshScreenFn = refreshScreen,
+            .clearScreenFn = clearScreen,
         },
     };
 }
@@ -73,6 +77,11 @@ pub fn deinit(self: *SDLRenderer) void {
 fn refreshScreen(renderer: *Renderer) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer); // Not sure what the overhead is here, just testing "interfaces" =D
     sdl_wrapper.refreshScreenWithBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
+}
+
+fn clearScreen(renderer: *Renderer) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    sdl_wrapper.clearScreen(self.sdl_renderer);
 }
 
 fn initialiseFloorAndCeilingBuffer(width: usize, height: usize, buffer: []u32) void {
@@ -155,4 +164,16 @@ fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, t
         const texel = texels[@floatToInt(usize, texel_index)];
         self.back_buffer[x + draw_y * self.screen_width] = texel;
     }
+}
+
+pub fn drawRect(renderer: *Renderer, x: usize, y: usize, width: usize, height: usize, colour: Colour) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
+    sdl_wrapper.drawRect(self.sdl_renderer, x, y, width, height, sdl_color);
+}
+
+pub fn drawLine(renderer: *Renderer, x1: usize, y1: usize, x2: usize, y2: usize, colour: Colour) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
+    sdl_wrapper.drawLine(self.sdl_renderer, x1, y1, x2, y2, sdl_color);
 }

@@ -3,6 +3,7 @@ const Allocator = std.mem.Allocator;
 const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const Renderer = @import("Renderer.zig");
+const Colour = Renderer.Colour;
 usingnamespace @import("map.zig");
 
 const texture_height = @import("texture.zig").texture_height;
@@ -30,7 +31,7 @@ pub const GameState = struct {
             .allocator = allocator,
             .player_x = (cell_size * 2),
             .player_y = (cell_size * 2),
-            .player_angle = 0,
+            .player_angle = 90,
             .fov = default_fov,
             .map = try Map.createFromFile(allocator, "data/map1.map"),
             //.map = try Map.createEmpty(allocator, 10, 10),
@@ -54,11 +55,62 @@ pub const GameState = struct {
 };
 
 pub fn draw(state: *GameState, renderer: *Renderer) void {
+    renderer.clearScreen();
+
     renderer.drawFloorAndCeiling();
 
     drawWalls(state, renderer);
 
+    drawMap(state, renderer);
+
     renderer.refreshScreen();
+}
+
+fn drawMap(state: *GameState, renderer: *Renderer) void {
+    // Render map as grid
+    const map_display_height = 400;
+    const map_display_width = 400;
+    const cell_display_size = map_display_width / state.map.width;
+    const colour_white = Colour{ .r = 255, .g = 255, .b = 255 };
+    const colour_red = Colour{ .r = 255, .g = 25, .b = 25 };
+    const colour_light_grey = Colour{ .r = 180, .g = 180, .b = 180 };
+    const colour_default = Colour{ .r = 255, .g = 255, .b = 255 };
+    var x: usize = 0;
+    while (x < state.map.width) : (x += 1) {
+        var y: usize = 0;
+        while (y < state.map.height) : (y += 1) {
+            const index = x + (y * state.map.width);
+            if (state.map.data[index] > 0) {
+                renderer.drawRect(x * cell_display_size, y * cell_display_size, cell_display_size, cell_display_size, colour_default);
+            }
+        }
+    }
+
+    // Render player rays
+    const rays_to_cast = 50;
+    const cell_display_scale: f32 = map_display_width / @intToFloat(f32, cell_size * state.map.width);
+    const player_x_scaled = @intToFloat(f32, state.player_x) * cell_display_scale;
+    const player_y_scaled = @intToFloat(f32, state.player_y) * cell_display_scale;
+
+    const player_angle = @intToFloat(f32, state.player_angle);
+    const column_angle = @intToFloat(f32, state.fov) / @intToFloat(f32, rays_to_cast);
+
+    const start_angle = player_angle + @intToFloat(f32, @divFloor(state.fov, 2));
+    var render_angle = wrapAngle(f32, start_angle);
+
+    var ray_cast_count: usize = 0;
+    while (ray_cast_count < rays_to_cast) : (ray_cast_count += 1) {
+        const colour = if (ray_cast_count == 0 or ray_cast_count == rays_to_cast - 1) colour_red else colour_light_grey;
+        const ray_cast_result = castRay(state.map, state.player_x, state.player_y, render_angle);
+        const scaled_distance = ray_cast_result.distance * cell_display_scale;
+
+        const hit_x = player_x_scaled + scaled_distance * std.math.cos(render_angle * rads_per_deg);
+        const hit_y = player_y_scaled - scaled_distance * std.math.sin(render_angle * rads_per_deg);
+        renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), colour);
+
+        // Increment angle
+        render_angle = wrapAngle(f32, render_angle - column_angle);
+    }
 }
 
 fn drawWalls(state: *GameState, renderer: *Renderer) void {
