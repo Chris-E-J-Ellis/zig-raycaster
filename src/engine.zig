@@ -31,7 +31,7 @@ pub const GameState = struct {
             .allocator = allocator,
             .player_x = (cell_size * 2),
             .player_y = (cell_size * 2),
-            .player_angle = 90,
+            .player_angle = 0,
             .fov = default_fov,
             .map = try Map.createFromFile(allocator, "data/map1.map"),
             //.map = try Map.createEmpty(allocator, 10, 10),
@@ -73,6 +73,8 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
     const cell_display_size = map_display_width / state.map.width;
     const colour_white = Colour{ .r = 255, .g = 255, .b = 255 };
     const colour_red = Colour{ .r = 255, .g = 25, .b = 25 };
+    const colour_blue = Colour{ .r = 55, .g = 55, .b = 255 };
+    const colour_green = Colour{ .r = 55, .g = 255, .b = 55 };
     const colour_light_grey = Colour{ .r = 180, .g = 180, .b = 180 };
     const colour_default = Colour{ .r = 255, .g = 255, .b = 255 };
     var x: usize = 0;
@@ -100,17 +102,31 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
 
     var ray_cast_count: usize = 0;
     while (ray_cast_count < rays_to_cast) : (ray_cast_count += 1) {
-        const colour = if (ray_cast_count == 0 or ray_cast_count == rays_to_cast - 1) colour_red else colour_light_grey;
         const ray_cast_result = castRay(state.map, state.player_x, state.player_y, render_angle);
         const scaled_distance = ray_cast_result.distance * cell_display_scale;
+        //var ray_colour = if (ray_cast_result.vertical_wall) colour_green else colour_red;
+        var ray_colour = colour_light_grey;
+        if (ray_cast_count == 0 or ray_cast_count == rays_to_cast - 1)
+            ray_colour = colour_red;
 
         const hit_x = player_x_scaled + scaled_distance * std.math.cos(render_angle * rads_per_deg);
         const hit_y = player_y_scaled - scaled_distance * std.math.sin(render_angle * rads_per_deg);
-        renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), colour);
+        renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), ray_colour);
+
+        //const map_colour = if (ray_cast_result.vertical_wall) colour_green else colour_red;
+        const map_colour = colour_red;
+        renderer.drawRect(ray_cast_result.map_x * cell_display_size, ray_cast_result.map_y * cell_display_size, cell_display_size, cell_display_size, map_colour);
 
         // Increment angle
         render_angle = wrapAngle(f32, render_angle - column_angle);
     }
+
+    // Draw player direction
+    const ray_cast_result = castRay(state.map, state.player_x, state.player_y, player_angle);
+    const scaled_distance = ray_cast_result.distance * cell_display_scale;
+    const hit_x = player_x_scaled + scaled_distance * std.math.cos(player_angle * rads_per_deg);
+    const hit_y = player_y_scaled - scaled_distance * std.math.sin(player_angle * rads_per_deg);
+    renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), colour_green);
 }
 
 fn drawWalls(state: *GameState, renderer: *Renderer) void {
