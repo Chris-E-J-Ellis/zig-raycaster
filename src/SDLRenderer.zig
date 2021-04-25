@@ -59,6 +59,7 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
             .drawRectFn = drawRect,
             .drawLineFn = drawLine,
             .refreshScreenFn = refreshScreen,
+            .updateBufferFn = updateBuffer,
             .clearScreenFn = clearScreen,
         },
     };
@@ -74,9 +75,14 @@ pub fn deinit(self: *SDLRenderer) void {
     sdl_wrapper.quit();
 }
 
-fn refreshScreen(renderer: *Renderer) void {
+fn updateBuffer(renderer: *Renderer) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer); // Not sure what the overhead is here, just testing "interfaces" =D
-    sdl_wrapper.refreshScreenWithBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
+    sdl_wrapper.renderBuffer(self.sdl_renderer, self.sdl_texture, self.back_buffer, self.screen_width);
+}
+
+fn refreshScreen(renderer: *Renderer) void {
+    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
+    sdl_wrapper.refreshScreen(self.sdl_renderer);
 }
 
 fn clearScreen(renderer: *Renderer) void {

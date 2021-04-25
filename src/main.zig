@@ -78,6 +78,14 @@ pub fn processInput(state: *engine.GameState) bool {
         engine.toggleTextures(state);
     }
 
+    if (keys.isPressed(.m)) {
+        engine.toggleMap(state);
+    }
+
+    if (keys.isPressed(.g)) {
+        engine.toggleMainGame(state);
+    }
+
     if (keys.isPressed(.x)) {
         return true;
     }

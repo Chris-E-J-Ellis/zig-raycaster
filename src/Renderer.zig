@@ -8,10 +8,15 @@ drawCenteredTexturedColumnFn: fn (self: *Renderer, x: usize, height: usize, texe
 drawRectFn: fn (self: *Renderer, x: usize, y: usize, width: usize, height: usize, colour: Colour) void,
 drawLineFn: fn (self: *Renderer, x1: usize, y2: usize, x2: usize, y2: usize, colour: Colour) void,
 clearScreenFn: fn (self: *Renderer) void,
+updateBufferFn: fn (self: *Renderer) void,
 refreshScreenFn: fn refreshScreen(self: *Renderer) void,
 
 pub fn refreshScreen(self: *Renderer) void {
     self.refreshScreenFn(self);
+}
+
+pub fn updateBuffer(self: *Renderer) void {
+    self.updateBufferFn(self);
 }
 
 pub fn clearScreen(self: *Renderer) void {

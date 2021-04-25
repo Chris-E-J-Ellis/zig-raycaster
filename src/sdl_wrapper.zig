@@ -55,12 +55,14 @@ pub fn createTextureFromSurface(renderer: *sdl.SDL_Renderer, surface: *sdl.SDL_S
     };
 }
 
-pub fn refreshScreenWithBuffer(renderer: *sdl.SDL_Renderer, texture: *sdl.SDL_Texture, buffer: []u32, width: usize) void {
+pub fn renderBuffer(renderer: *sdl.SDL_Renderer, texture: *sdl.SDL_Texture, buffer: []u32, width: usize) void {
     const bytesPerPixel = 4;
     const pitch = @intCast(c_int, width * bytesPerPixel);
-    //_ = sdl.SDL_UpdateTexture(texture, null, &buffer[0], pitch);
-    //_ = sdl.SDL_RenderClear(renderer);
-    //_ = sdl.SDL_RenderCopy(renderer, texture, null, null);
+    _ = sdl.SDL_UpdateTexture(texture, null, &buffer[0], pitch);
+    _ = sdl.SDL_RenderCopy(renderer, texture, null, null);
+}
+
+pub fn refreshScreen(renderer: *sdl.SDL_Renderer) void {
     _ = sdl.SDL_RenderPresent(renderer);
 }
 
@@ -108,6 +110,8 @@ pub const ScanCode = enum(c_int) {
     i = sdl.SDL_SCANCODE_I,
     k = sdl.SDL_SCANCODE_K,
     l = sdl.SDL_SCANCODE_L,
+    m = sdl.SDL_SCANCODE_M,
+    g = sdl.SDL_SCANCODE_G,
     s = sdl.SDL_SCANCODE_S,
     t = sdl.SDL_SCANCODE_T,
     w = sdl.SDL_SCANCODE_W,

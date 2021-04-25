@@ -24,7 +24,9 @@ pub const GameState = struct {
     fov: u32,
     map: Map,
     textures: []Texture,
-    draw_textures: bool,
+    draw_textures: bool = true,
+    draw_map: bool = false,
+    draw_main_game: bool = true,
 
     pub fn initDefault(allocator: *Allocator, width: usize, height: usize) !GameState {
         return GameState{
@@ -57,11 +59,14 @@ pub const GameState = struct {
 pub fn draw(state: *GameState, renderer: *Renderer) void {
     renderer.clearScreen();
 
-    renderer.drawFloorAndCeiling();
+    if (state.draw_main_game) {
+        renderer.drawFloorAndCeiling();
+        drawWalls(state, renderer);
+        renderer.updateBuffer();
+    }
 
-    drawWalls(state, renderer);
-
-    drawMap(state, renderer);
+    if (state.draw_map)
+        drawMap(state, renderer);
 
     renderer.refreshScreen();
 }
@@ -318,6 +323,14 @@ pub fn strafeRight(state: *GameState) void {
 
 pub fn toggleTextures(state: *GameState) void {
     state.draw_textures = !state.draw_textures;
+}
+
+pub fn toggleMap(state: *GameState) void {
+    state.draw_map = !state.draw_map;
+}
+
+pub fn toggleMainGame(state: *GameState) void {
+    state.draw_main_game = !state.draw_main_game;
 }
 
 pub fn tick(state: *const GameState) void {
