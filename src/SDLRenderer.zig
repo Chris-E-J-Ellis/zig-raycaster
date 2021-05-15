@@ -60,7 +60,6 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
             .drawLineFn = drawLine,
             .refreshScreenFn = refreshScreen,
             .updateBufferFn = updateBuffer,
-            .clearScreenFn = clearScreen,
         },
     };
 }
@@ -83,11 +82,6 @@ fn updateBuffer(renderer: *Renderer) void {
 fn refreshScreen(renderer: *Renderer) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     sdl_wrapper.refreshScreen(self.sdl_renderer);
-}
-
-fn clearScreen(renderer: *Renderer) void {
-    const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
-    sdl_wrapper.clearScreen(self.sdl_renderer);
 }
 
 fn initialiseFloorAndCeilingBuffer(width: usize, height: usize, buffer: []u32) void {

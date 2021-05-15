@@ -64,9 +64,6 @@ pub fn renderBuffer(renderer: *sdl.SDL_Renderer, texture: *sdl.SDL_Texture, buff
 
 pub fn refreshScreen(renderer: *sdl.SDL_Renderer) void {
     _ = sdl.SDL_RenderPresent(renderer);
-}
-
-pub fn clearScreen(renderer: *sdl.SDL_Renderer) void {
     _ = sdl.SDL_RenderClear(renderer);
 }
 
