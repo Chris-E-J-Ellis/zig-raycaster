@@ -15,8 +15,8 @@ const rads_per_deg: f32 = std.math.tau / 360.0;
 const default_fov = 60;
 
 // Map drawing
-const map_display_height: u32 = 400;
-const map_display_width: u32 = 400;
+var map_display_height: u32 = 400;
+var map_display_width: u32 = 400;
 const colour_white = Colour{ .r = 255, .g = 255, .b = 255 };
 const colour_red = Colour{ .r = 255, .g = 25, .b = 25 };
 const colour_blue = Colour{ .r = 55, .g = 55, .b = 255 };
@@ -83,7 +83,7 @@ pub fn draw(state: *GameState, renderer: *Renderer) void {
 
 fn drawMap(state: *GameState, renderer: *Renderer) void {
 
-    // Render map as grid, scale based on height
+    // Render map as grid, scale based on height (usually the smaller screen dimension).
     const cell_display_size = map_display_height / state.map.height;
     var x: usize = 0;
     while (x < state.map.width) : (x += 1) {
@@ -336,8 +336,10 @@ pub fn tick(state: *const GameState) void {
     // Do something.
 }
 
-pub fn setScreenSize(state: *GameState, screen_width: u32, screen_height: u32) void {
-    // Do something.
+pub fn setScreenSize(state: *const GameState, screen_width: u32, screen_height: u32) void {
+    // For now, just scale the map, ensure the size is divisible by the number of map cells.
+    map_display_height = screen_height - @mod(screen_height, state.map.height);
+    map_display_width = screen_width - @mod(screen_width, state.map.width);
 }
 
 fn wrapAngle(comptime T: type, angle: T) T {
