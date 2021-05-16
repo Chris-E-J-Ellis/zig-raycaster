@@ -15,8 +15,8 @@ const rads_per_deg: f32 = std.math.tau / 360.0;
 const default_fov = 60;
 
 // Map drawing
-const map_display_height = 400;
-const map_display_width = 400;
+const map_display_height: u32 = 400;
+const map_display_width: u32 = 400;
 const colour_white = Colour{ .r = 255, .g = 255, .b = 255 };
 const colour_red = Colour{ .r = 255, .g = 25, .b = 25 };
 const colour_blue = Colour{ .r = 55, .g = 55, .b = 255 };
@@ -74,6 +74,7 @@ pub fn draw(state: *GameState, renderer: *Renderer) void {
         renderer.updateBuffer();
     }
 
+    // Draw the map on top of the main game buffer, just a test.
     if (state.draw_map)
         drawMap(state, renderer);
 
@@ -82,8 +83,8 @@ pub fn draw(state: *GameState, renderer: *Renderer) void {
 
 fn drawMap(state: *GameState, renderer: *Renderer) void {
 
-    // Render map as grid, scale based on width
-    const cell_display_size = map_display_width / state.map.width;
+    // Render map as grid, scale based on height
+    const cell_display_size = map_display_height / state.map.height;
     var x: usize = 0;
     while (x < state.map.width) : (x += 1) {
         var y: usize = 0;
@@ -97,7 +98,7 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
 
     // Render some fov rays
     const rays_to_cast: f32 = 50;
-    const cell_display_scale: f32 = map_display_width / @intToFloat(f32, cell_size * state.map.width);
+    const cell_display_scale: f32 = @intToFloat(f32, map_display_height) / @intToFloat(f32, cell_size * state.map.height);
     const player_x_scaled = @intToFloat(f32, state.player_x) * cell_display_scale;
     const player_y_scaled = @intToFloat(f32, state.player_y) * cell_display_scale;
 
@@ -332,6 +333,10 @@ pub fn toggleMainGame(state: *GameState) void {
 }
 
 pub fn tick(state: *const GameState) void {
+    // Do something.
+}
+
+pub fn setScreenSize(state: *GameState, screen_width: u32, screen_height: u32) void {
     // Do something.
 }
 

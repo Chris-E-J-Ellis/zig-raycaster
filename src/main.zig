@@ -28,7 +28,7 @@ pub fn main() anyerror!void {
     while (ticks > 0) : (ticks -= 1) {
         if (processInput(&state))
             break;
-        if (processEvents())
+        if (processEvents(&state))
             break;
         engine.tick(&state);
         engine.draw(&state, renderer);
@@ -93,10 +93,14 @@ pub fn processInput(state: *engine.GameState) bool {
     return false;
 }
 
-pub fn processEvents() bool {
+pub fn processEvents(state: *engine.GameState) bool {
     while (sdl_wrapper.pollEvent()) |event| {
         switch (event) {
-            (.quit) => return true,
+            .quit => return true,
+            .window => switch (event.window) {
+                .resize => engine.setScreenSize(state, event.window.resize.width, event.window.resize.height),
+                else => return false,
+            },
             else => return false,
         }
     }

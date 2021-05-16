@@ -132,14 +132,30 @@ pub fn getKeyboardState() KeyboardState {
 // Some good inspiration from xq's sdl bindings on how to handle this stuff.
 pub const Event = union(enum) {
     quit: sdl.SDL_QuitEvent,
+    window: WindowEvent,
     unhandled: void,
 
-    fn from(event: sdl.SDL_Event) Event {
-        return switch (event.type) {
-            sdl.SDL_QUIT => Event{ .quit = event.quit },
+    fn from(sdl_event: sdl.SDL_Event) Event {
+        return switch (sdl_event.type) {
+            sdl.SDL_QUIT => Event{ .quit = sdl_event.quit },
+            sdl.SDL_WINDOWEVENT => Event{ .window = WindowEvent.from(sdl_event.window) },
             else => Event.unhandled,
         };
     }
+};
+
+pub const WindowEvent = union(enum) {
+    resize: SizeData,
+    unhandled: void,
+
+    pub fn from(sdl_window_event: sdl.SDL_WindowEvent) WindowEvent {
+        return switch (sdl_window_event.event) {
+            sdl.SDL_WINDOWEVENT_RESIZED => WindowEvent{ .resize = .{ .width = @intCast(u32, sdl_window_event.data1), .height = @intCast(u32, sdl_window_event.data2) } },
+            else => WindowEvent.unhandled,
+        };
+    }
+
+    const SizeData = struct { width: u32, height: u32 };
 };
 
 pub fn pollEvent() ?Event {
