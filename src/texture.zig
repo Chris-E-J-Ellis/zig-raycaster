@@ -4,7 +4,21 @@ const Allocator = std.mem.Allocator;
 pub const texture_width = 64;
 pub const texture_height = 64;
 const texture_data_length = texture_width * texture_height;
-const texture_count = 10;
+
+const error_texture_path: []const u8 = "data/error.bmp";
+
+const texture_filepaths = [_][]const u8{
+    error_texture_path,
+    "data/bluestone.bmp",
+    "data/wood.bmp",
+    "data/eagle.bmp",
+    "data/greystone.bmp",
+    "data/colorstone.bmp",
+    "data/redbrick.bmp",
+    "data/mossy.bmp",
+    "data/purplestone.bmp",
+    "data/purplestone.bmp",
+};
 
 pub const Texture = struct {
     allocator: *Allocator,
@@ -49,7 +63,8 @@ pub const Texture = struct {
     }
 
     pub fn loadPlaceholderTextures(allocator: *Allocator) ![]Texture {
-        var textures = try allocator.alloc(Texture, texture_count);
+        const placeholder_texture_count = 9;
+        var textures = try allocator.alloc(Texture, placeholder_texture_count);
         for (textures) |*texture| {
             const data = try allocator.alloc(u32, texture_data_length);
             errdefer allocator.free(data);
@@ -75,7 +90,6 @@ pub const Texture = struct {
                 textures[4].data[x + y * texture_width] = 0x010100 * @as(u32, @boolToInt(x % 16 != 0 and y % 16 != 0 and y != 63)) * x_colour;
                 textures[5].data[x + y * texture_width] = 0x010001 * x_colour;
                 textures[6].data[x + y * texture_width] = 0xFFFFFF * @as(u32, @boolToInt(x != 0 and x != 63 and y != 0 and y != 63));
-                textures[2].data[x + y * texture_width] = 0x000100 * xor_colour;
 
                 if (x == 0)
                     textures[6].data[x + y * texture_width] = 0x33FF33;
@@ -93,26 +107,20 @@ pub const Texture = struct {
         return textures;
     }
 
+    // Probably doesn't belong in this struct, should have some kind of loader that cleans up.
     pub fn loadTextures(allocator: *Allocator) ![]Texture {
-        var textures = try allocator.alloc(Texture, texture_count);
+        var textures = try allocator.alloc(Texture, texture_filepaths.len);
 
-        const error_texture = try createFromFile(allocator, "data/error.bmp");
-        textures[0] = error_texture;
-        textures[1] = createFromFile(allocator, "data/bluestone.bmp") catch error_texture;
-        textures[2] = createFromFile(allocator, "data/wood.bmp") catch error_texture;
-        textures[3] = createFromFile(allocator, "data/eagle.bmp") catch error_texture;
-        textures[4] = createFromFile(allocator, "data/greystone.bmp") catch error_texture;
-        textures[5] = createFromFile(allocator, "data/colorstone.bmp") catch error_texture;
-        textures[6] = createFromFile(allocator, "data/redbrick.bmp") catch error_texture;
-        textures[7] = createFromFile(allocator, "data/mossy.bmp") catch error_texture;
-        textures[8] = createFromFile(allocator, "data/purplestone.bmp") catch error_texture;
-        textures[9] = createFromFile(allocator, "data/purplestone.bmp") catch error_texture;
+        for (texture_filepaths) |path, index| {
+            textures[index] = createFromFile(allocator, path) catch try createFromFile(allocator, error_texture_path);
+        }
 
         return textures;
     }
 
-    pub fn deinit(self: Texture) void {
+    pub fn deinit(self: *Texture) void {
         self.allocator.free(self.data);
+        self.data = undefined;
     }
 
     fn transposeXY(texture: Texture) void {

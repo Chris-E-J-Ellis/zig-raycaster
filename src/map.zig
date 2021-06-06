@@ -87,6 +87,7 @@ pub const Map = struct {
 
     pub fn deinit(self: *Map) void {
         self.allocator.free(self.data);
+        self.data = undefined;
     }
 };
 
