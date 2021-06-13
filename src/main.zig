@@ -24,7 +24,7 @@ pub fn main() anyerror!void {
     var old_time: i128 = 0;
     comptime const min_time_per_frame = 16 * std.time.ns_per_ms;
 
-    var ticks: usize = 0xFFFFFF;
+    var ticks: u32 = 0xFFFFFF;
     while (ticks > 0) : (ticks -= 1) {
         if (processInput(&state))
             break;

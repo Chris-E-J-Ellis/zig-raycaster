@@ -86,9 +86,9 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
 
     // Render map as grid, scale based on height (usually the smaller screen dimension).
     const cell_display_size = map_display_height / state.map.height;
-    var x: usize = 0;
+    var x: u32 = 0;
     while (x < state.map.width) : (x += 1) {
-        var y: usize = 0;
+        var y: u32 = 0;
         while (y < state.map.height) : (y += 1) {
             const index = x + (y * state.map.width);
             if (state.map.data[index] > 0) {
@@ -109,7 +109,7 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
     const start_angle = player_angle + @intToFloat(f32, @divFloor(state.fov, 2));
     var render_angle = wrapAngle(f32, start_angle);
 
-    var ray_cast_count: usize = 0;
+    var ray_cast_count: u32 = 0;
     while (ray_cast_count < rays_to_cast) : (ray_cast_count += 1) {
         const ray_cast_result = castRay(state.map, state.player_x, state.player_y, render_angle);
         const scaled_distance = ray_cast_result.distance * cell_display_scale;
@@ -118,7 +118,7 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
         const hit_y = player_y_scaled - scaled_distance * std.math.sin(render_angle * rads_per_deg);
 
         // Draw ray
-        renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), ray_colour);
+        renderer.drawLine(@floatToInt(u32, player_x_scaled), @floatToInt(u32, player_y_scaled), @floatToInt(u32, hit_x), @floatToInt(u32, hit_y), ray_colour);
 
         // Highlight map cell
         renderer.drawRect(ray_cast_result.map_x * cell_display_size, ray_cast_result.map_y * cell_display_size, cell_display_size, cell_display_size, colour_red);
@@ -131,7 +131,7 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
     const scaled_distance = ray_cast_result.distance * cell_display_scale;
     const hit_x = player_x_scaled + scaled_distance * std.math.cos(player_angle * rads_per_deg);
     const hit_y = player_y_scaled - scaled_distance * std.math.sin(player_angle * rads_per_deg);
-    renderer.drawLine(@floatToInt(usize, player_x_scaled), @floatToInt(usize, player_y_scaled), @floatToInt(usize, hit_x), @floatToInt(usize, hit_y), colour_green);
+    renderer.drawLine(@floatToInt(u32, player_x_scaled), @floatToInt(u32, player_y_scaled), @floatToInt(u32, hit_x), @floatToInt(u32, hit_y), colour_green);
 }
 
 fn drawWalls(state: *GameState, renderer: *Renderer) void {
@@ -141,7 +141,7 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
     const start_angle = player_angle + @intToFloat(f32, @divFloor(state.fov, 2));
     var render_angle = wrapAngle(f32, start_angle);
 
-    var column_render_count: usize = 0;
+    var column_render_count: u32 = 0;
     while (column_render_count < state.screen_width) : (column_render_count += 1) {
         const rayCastResult = castRay(state.map, state.player_x, state.player_y, render_angle);
 

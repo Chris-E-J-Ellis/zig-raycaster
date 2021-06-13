@@ -17,10 +17,10 @@ sdl_screen: *sdl_wrapper.Window,
 sdl_surface: *sdl_wrapper.Surface,
 sdl_texture: *sdl_wrapper.Texture,
 sdl_renderer: *sdl_wrapper.Renderer,
-screen_width: usize = default_screen_height,
-screen_height: usize = default_screen_width,
+screen_width: u32 = default_screen_height,
+screen_height: u32 = default_screen_width,
 
-pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
+pub fn init(width: u32, height: u32, allocator: *Allocator) !SDLRenderer {
     const back_buffer = try allocator.alloc(u32, (width * height));
     errdefer allocator.free(back_buffer);
 
@@ -88,14 +88,14 @@ fn refreshScreen(renderer: *Renderer) void {
     sdl_wrapper.refreshScreen(self.sdl_renderer);
 }
 
-fn initialiseFloorAndCeilingBuffer(width: usize, height: usize, buffer: []u32) void {
+fn initialiseFloorAndCeilingBuffer(width: u32, height: u32, buffer: []u32) void {
     const light_grey = 0x777777;
     const dark_grey = 0x333333;
     const halfway_index = height / 2;
 
-    var y: usize = 0;
+    var y: u32 = 0;
     while (y < height) : (y += 1) {
-        var x: usize = 0;
+        var x: u32 = 0;
         while (x < width) : (x += 1) {
             const index = (y * width) + x;
             buffer[index] = if (y > halfway_index)
@@ -111,7 +111,7 @@ fn drawFloorAndCeiling(renderer: *Renderer) void {
     std.mem.copy(u32, self.back_buffer, self.floor_and_ceiling_buffer);
 }
 
-fn drawCenteredColumn(renderer: *Renderer, x: usize, height: usize, colour: u32) void {
+fn drawCenteredColumn(renderer: *Renderer, x: u32, height: u32, colour: u32) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     const draw_height = if (height < self.screen_height) height else self.screen_height;
     const draw_y_start = if (height < self.screen_height) @as(usize, @divFloor(self.screen_height - height, 2)) else 0;
@@ -122,7 +122,7 @@ fn drawCenteredColumn(renderer: *Renderer, x: usize, height: usize, colour: u32)
     }
 }
 
-fn drawCenteredTexturedColumn(renderer: *Renderer, x: usize, height: usize, texels: []const u32) void {
+fn drawCenteredTexturedColumn(renderer: *Renderer, x: u32, height: u32, texels: []const u32) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     var texel_start_offset: f32 = 0;
     var back_buffer_offset: f32 = 0;
@@ -150,7 +150,7 @@ fn drawCenteredTexturedColumn(renderer: *Renderer, x: usize, height: usize, texe
     }
 }
 
-fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, texels: []const u32) void {
+fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: u32, height: u32, texels: []const u32) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     const height_adjust = if (@mod(height, 2) == 0) height else height + 1;
     const draw_start = if (height_adjust < self.screen_height) (self.screen_height - height_adjust) / 2 else 0;
@@ -170,13 +170,13 @@ fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: usize, height: usize, t
     }
 }
 
-pub fn drawRect(renderer: *Renderer, x: usize, y: usize, width: usize, height: usize, colour: Colour) void {
+pub fn drawRect(renderer: *Renderer, x: u32, y: u32, width: u32, height: u32, colour: Colour) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
     sdl_wrapper.drawRect(self.sdl_renderer, x, y, width, height, sdl_color);
 }
 
-pub fn drawLine(renderer: *Renderer, x1: usize, y1: usize, x2: usize, y2: usize, colour: Colour) void {
+pub fn drawLine(renderer: *Renderer, x1: u32, y1: u32, x2: u32, y2: u32, colour: Colour) void {
     const self = @fieldParentPtr(SDLRenderer, "renderer", renderer);
     const sdl_color = sdl_wrapper.Color{ .r = colour.r, .g = colour.g, .b = colour.b, .a = 255 };
     sdl_wrapper.drawLine(self.sdl_renderer, x1, y1, x2, y2, sdl_color);
