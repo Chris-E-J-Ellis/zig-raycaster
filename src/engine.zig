@@ -64,6 +64,7 @@ pub const GameState = struct {
             texture.deinit();
         }
         self.allocator.free(self.textures);
+        self.textures = undefined;
     }
 };
 

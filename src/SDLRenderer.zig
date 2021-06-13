@@ -66,7 +66,11 @@ pub fn init(width: usize, height: usize, allocator: *Allocator) !SDLRenderer {
 
 pub fn deinit(self: *SDLRenderer) void {
     self.allocator.free(self.back_buffer);
+    self.back_buffer = undefined;
+
     self.allocator.free(self.floor_and_ceiling_buffer);
+    self.floor_and_ceiling_buffer = undefined;
+
     sdl_wrapper.destroyTexture(self.sdl_texture);
     sdl_wrapper.freeSurface(self.sdl_surface);
     sdl_wrapper.destroyRenderer(self.sdl_renderer);
