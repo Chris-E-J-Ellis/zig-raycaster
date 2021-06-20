@@ -365,15 +365,15 @@ test "DDA - Light texel position testing" {
     var result = castRay(map, start_x, start_y, angle);
 
     result = castRay(map, start_x, start_y, angle);
-    testing.expectEqual(result.texel_intersect, 1);
+    try testing.expectEqual(result.texel_intersect, 1);
 
     angle = 0.0;
     result = castRay(map, start_x, start_y, angle);
-    testing.expectEqual(result.texel_intersect, 0);
+    try testing.expectEqual(result.texel_intersect, 0);
 
     angle = 0.8;
     result = castRay(map, start_x, start_y, angle);
-    testing.expectEqual(result.texel_intersect, 63);
+    try testing.expectEqual(result.texel_intersect, 63);
 }
 
 test "DDA - Scan the wall and check the texture intersect" {
@@ -391,7 +391,7 @@ test "DDA - Scan the wall and check the texture intersect" {
     while (current_x < start_x + cell_size) : (current_x += 1) {
         result = castRay(map, current_x, start_y, angle);
         const expected_texel_intersect = @mod(current_x, texture_height);
-        testing.expectEqual(expected_texel_intersect, result.texel_intersect);
+        try testing.expectEqual(expected_texel_intersect, result.texel_intersect);
     }
 }
 
@@ -406,74 +406,74 @@ test "DDA - A bunch of loose direction tests" {
 
     var result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 9);
-    testing.expect(result.map_y == 4);
-    testing.expect(result.vertical_wall == true);
-    testing.expect(result.distance == 256);
+    try testing.expect(result.map_x == 9);
+    try testing.expect(result.map_y == 4);
+    try testing.expect(result.vertical_wall == true);
+    try testing.expect(result.distance == 256);
 
     player_angle = 90;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 5);
-    testing.expect(result.map_y == 0);
-    testing.expect(result.vertical_wall == false);
-    testing.expect(result.distance == 256);
+    try testing.expect(result.map_x == 5);
+    try testing.expect(result.map_y == 0);
+    try testing.expect(result.vertical_wall == false);
+    try testing.expect(result.distance == 256);
 
     player_angle = 180;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 0);
-    testing.expect(result.map_y == 5);
-    testing.expect(result.vertical_wall == true);
-    testing.expect(result.distance == 256);
+    try testing.expect(result.map_x == 0);
+    try testing.expect(result.map_y == 5);
+    try testing.expect(result.vertical_wall == true);
+    try testing.expect(result.distance == 256);
 
     player_angle = 270;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 5);
-    testing.expect(result.map_y == 9);
-    testing.expect(result.vertical_wall == false);
-    testing.expect(result.distance == 256);
+    try testing.expect(result.map_x == 5);
+    try testing.expect(result.map_y == 9);
+    try testing.expect(result.vertical_wall == false);
+    try testing.expect(result.distance == 256);
 
     player_angle = 45;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 8);
-    testing.expect(result.map_y == 0);
-    testing.expect(result.vertical_wall == false);
-    testing.expect(@floor(result.distance) == 362);
+    try testing.expect(result.map_x == 8);
+    try testing.expect(result.map_y == 0);
+    try testing.expect(result.vertical_wall == false);
+    try testing.expect(@floor(result.distance) == 362);
 
     player_angle = 135;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 1);
-    testing.expect(result.map_y == 0);
-    testing.expect(result.vertical_wall == false);
-    testing.expect(@floor(result.distance) == 362);
+    try testing.expect(result.map_x == 1);
+    try testing.expect(result.map_y == 0);
+    try testing.expect(result.vertical_wall == false);
+    try testing.expect(@floor(result.distance) == 362);
 
     player_angle = 225;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 0);
-    testing.expect(result.map_y == 8);
-    testing.expect(result.vertical_wall == true);
-    testing.expect(@floor(result.distance) == 362);
+    try testing.expect(result.map_x == 0);
+    try testing.expect(result.map_y == 8);
+    try testing.expect(result.vertical_wall == true);
+    try testing.expect(@floor(result.distance) == 362);
 
     player_angle = 315;
     result = castRay(map, start_x, start_y, player_angle);
 
-    testing.expect(result.map_x == 8);
-    testing.expect(result.map_y == 9);
-    testing.expect(result.vertical_wall == false);
-    testing.expect(@floor(result.distance) == 362);
+    try testing.expect(result.map_x == 8);
+    try testing.expect(result.map_y == 9);
+    try testing.expect(result.vertical_wall == false);
+    try testing.expect(@floor(result.distance) == 362);
 }
 
 test "Angle greater than 360 can be wrapped" {
     var wrapped_angle = wrapAngle(f32, 360);
-    testing.expect(wrapped_angle == 0);
+    try testing.expect(wrapped_angle == 0);
 }
 
 test "Angle less than 0 can be wrapped" {
     var wrapped_angle = wrapAngle(f32, -1);
-    testing.expect(wrapped_angle == 359);
+    try testing.expect(wrapped_angle == 359);
 }

@@ -95,7 +95,7 @@ test "Try loading a map" {
     var allocator = std.testing.allocator;
     var map = try Map.createFromFile(allocator, "data/map1.map");
     defer map.deinit();
-    testing.expectEqual(@as(u32, 20), map.width);
-    testing.expectEqual(@as(u32, 20), map.height);
-    testing.expectEqual(@as(usize, 400), map.data.len);
+    try testing.expectEqual(@as(u32, 20), map.width);
+    try testing.expectEqual(@as(u32, 20), map.height);
+    try testing.expectEqual(@as(usize, 400), map.data.len);
 }
