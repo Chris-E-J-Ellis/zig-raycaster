@@ -8,13 +8,14 @@ pub fn build(b: *Builder) void {
     exe.setTarget(target);
 
     exe.linkSystemLibrary("c");
-    exe.linkSystemLibrary("sdl2");
+    exe.addIncludeDir("deps/include");
+    exe.addLibPath("deps/lib");
+
+    exe.addObjectFile("deps/lib/libSDL2.a");
 
     // I'm not entirely sure what I'm doing in the build currently,
     // but this will sort my two use cases for the moment =D
     if (std.Target.current.os.tag == .windows) {
-        exe.addIncludeDir("deps/include");
-        exe.addLibPath("deps/lib");
         exe.linkSystemLibrary("ole32");
         exe.linkSystemLibrary("oleaut32");
         exe.linkSystemLibrary("imm32");
