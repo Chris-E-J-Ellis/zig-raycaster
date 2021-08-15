@@ -4,18 +4,23 @@ const sdl_wrapper = @import("sdl_wrapper.zig");
 usingnamespace @import("map.zig");
 
 const SDLRenderer = @import("SDLRenderer.zig");
+const CursesRenderer = @import("CursesRenderer.zig");
 
 pub fn main() anyerror!void {
     var gp = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
     defer _ = gp.deinit();
     var allocator = &gp.allocator;
 
-    const width: usize = 320;
-    const height: usize = 200;
+    const width: usize = 80;
+    const height: usize = 50;
 
     var sdl_renderer = try SDLRenderer.init(width, height, allocator);
     defer sdl_renderer.deinit();
     var renderer = &sdl_renderer.renderer;
+
+    var curses_renderer = try CursesRenderer.init(width, height, allocator);
+    defer curses_renderer.deinit();
+    var renderer2 = &curses_renderer.renderer;
 
     var state = try engine.GameState.initDefault(allocator, width, height);
     defer state.deinit();
@@ -31,7 +36,9 @@ pub fn main() anyerror!void {
         if (processEvents(&state))
             break;
         engine.tick(&state);
+
         engine.draw(&state, renderer);
+        engine.draw(&state, renderer2);
 
         // Quick and dirty cap at ~60FPs.
         old_time = time;

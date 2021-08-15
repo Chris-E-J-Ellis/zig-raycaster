@@ -12,6 +12,7 @@ pub fn build(b: *Builder) void {
     exe.addLibPath("deps/lib");
 
     exe.addObjectFile("deps/lib/libSDL2.a");
+    exe.addObjectFile("deps/lib/libncursesw.a");
 
     // I'm not entirely sure what I'm doing in the build currently,
     // but this will sort my two use cases for the moment =D
