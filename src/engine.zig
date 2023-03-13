@@ -4,7 +4,7 @@ const testing = std.testing;
 const Texture = @import("texture.zig").Texture;
 const Renderer = @import("Renderer.zig");
 const Colour = Renderer.Colour;
-usingnamespace @import("map.zig");
+const Map = @import("map.zig").Map;
 
 // Game drawing
 const texture_height = @import("texture.zig").texture_height;
@@ -145,7 +145,7 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
     while (column_render_count < state.screen_width) : (column_render_count += 1) {
         const rayCastResult = castRay(state.map, state.player_x, state.player_y, render_angle);
 
-        const viewing_angle = std.math.absFloat(player_angle - render_angle);
+        const viewing_angle = std.math.fabs(player_angle - render_angle);
         var height = calcHeight(state.distance_to_projection_plane, rayCastResult.distance, viewing_angle);
 
         if (state.draw_textures) {
@@ -193,8 +193,8 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     // Some cos/sin radian oddities to check out.
     const sin_theta = std.math.cos((90 - angle_degs) * rads_per_deg);
     const cos_theta = std.math.cos(angle_degs * rads_per_deg);
-    const delta_dist_x = std.math.absFloat(1 / cos_theta);
-    const delta_dist_y = std.math.absFloat(1 / sin_theta);
+    const delta_dist_x = std.math.fabs(1 / cos_theta);
+    const delta_dist_y = std.math.fabs(1 / sin_theta);
 
     const x_step = delta_dist_x * cell_size;
     const y_step = delta_dist_y * cell_size;
@@ -296,29 +296,29 @@ pub fn turnRight(state: *GameState) void {
 pub fn moveForward(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x - @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x + @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y + @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y - @floatToInt(u32, y_inc);
+    state.player_x = if (x_inc < 0) state.player_x - @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x + @floatToInt(u32, x_inc);
+    state.player_y = if (y_inc < 0) state.player_y + @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y - @floatToInt(u32, y_inc);
 }
 
 pub fn moveBackward(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
+    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
 }
 
 pub fn strafeLeft(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
+    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
 }
 
 pub fn strafeRight(state: *GameState) void {
     var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
     var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.absFloat(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.absFloat(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
+    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
 }
 
 pub fn toggleTextures(state: *GameState) void {
@@ -334,6 +334,7 @@ pub fn toggleMainGame(state: *GameState) void {
 }
 
 pub fn tick(state: *const GameState) void {
+    _ = state;
     // Do something.
 }
 

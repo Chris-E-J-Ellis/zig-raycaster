@@ -30,11 +30,11 @@ pub const Texture = struct {
         var path_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const file_path = try std.fs.realpath(filename, &path_buffer);
 
-        const file = try std.fs.openFileAbsolute(file_path, .{ .read = true });
+        const file = try std.fs.openFileAbsolute(file_path, .{ .mode = .read_only });
         defer file.close();
 
         const max_buffer_size = 15 * 1024; // Big enough for my current testing textures
-        const file_buffer = try file.readToEndAlloc(allocator, max_buffer_size);
+        const file_buffer = try file.readToEndAlloc(allocator.*, max_buffer_size);
         defer allocator.free(file_buffer);
 
         const data = try allocator.alloc(u32, texture_data_length);

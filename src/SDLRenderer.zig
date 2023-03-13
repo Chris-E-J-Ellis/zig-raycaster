@@ -159,7 +159,6 @@ fn drawCenteredTexturedColumnAlt(renderer: *Renderer, x: u32, height: u32, texel
     const texel_start_offset = if (height_adjust > self.screen_height) @intToFloat(f32, height_adjust - self.screen_height) / 2 else 0;
     var texel_index = texel_start_offset * texel_scale;
 
-    var count: usize = 0;
     var draw_y = draw_start;
     while (draw_y < draw_end) : ({
         draw_y += 1;

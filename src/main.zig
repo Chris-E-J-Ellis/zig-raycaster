@@ -8,21 +8,21 @@ const SDLRenderer = @import("SDLRenderer.zig");
 pub fn main() anyerror!void {
     var gp = std.heap.GeneralPurposeAllocator(.{ .safety = true }){};
     defer _ = gp.deinit();
-    var allocator = &gp.allocator;
+    var allocator = gp.allocator();
 
     const width: usize = 320;
     const height: usize = 200;
 
-    var sdl_renderer = try SDLRenderer.init(width, height, allocator);
+    var sdl_renderer = try SDLRenderer.init(width, height, &allocator);
     defer sdl_renderer.deinit();
     var renderer = &sdl_renderer.renderer;
 
-    var state = try engine.GameState.initDefault(allocator, width, height);
+    var state = try engine.GameState.initDefault(&allocator, width, height);
     defer state.deinit();
 
     var time: i128 = 0;
     var old_time: i128 = 0;
-    comptime const min_time_per_frame = 16 * std.time.ns_per_ms;
+    const min_time_per_frame = 16 * std.time.ns_per_ms;
 
     var ticks: u32 = 0xFFFFFF;
     while (ticks > 0) : (ticks -= 1) {
@@ -42,8 +42,8 @@ pub fn main() anyerror!void {
         }
         delta_time = std.time.nanoTimestamp() - old_time;
 
-        const frame_time_seconds = @intToFloat(f32, delta_time) / std.time.ns_per_s;
-        const fps = @floatToInt(i32, 1 / frame_time_seconds);
+        //const frame_time_seconds = @intToFloat(f32, delta_time) / std.time.ns_per_s;
+        //const fps = @floatToInt(i32, 1 / frame_time_seconds);
         //std.debug.print("FPS:{} Frame Time (s): {d}\n", .{ fps, frame_time_seconds });
     }
 }

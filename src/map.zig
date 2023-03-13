@@ -35,18 +35,18 @@ pub const Map = struct {
         var pathBuffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const file_path = try std.fs.realpath(filename, &pathBuffer);
 
-        const file = try std.fs.openFileAbsolute(file_path, .{ .read = true });
+        const file = try std.fs.openFileAbsolute(file_path, .{ .mode = .read_only });
         defer file.close();
 
         const max_buffer_size = 2000;
-        const file_buffer = try file.readToEndAlloc(allocator, max_buffer_size);
+        const file_buffer = try file.readToEndAlloc(allocator.*, max_buffer_size);
         defer allocator.free(file_buffer);
 
-        var it = std.mem.split(file_buffer, "\n");
+        var it = std.mem.split(u8, file_buffer, "\n");
         const widthLine = it.next().?;
         const heightLine = it.next().?;
-        const widthToken = std.mem.tokenize(widthLine, "width =").next().?;
-        const heightToken = std.mem.tokenize(heightLine, "height =").next().?;
+        const widthToken = std.mem.tokenize(u8, widthLine, "width =").next().?;
+        const heightToken = std.mem.tokenize(u8, heightLine, "height =").next().?;
         const radix = 10;
         const width = try std.fmt.parseInt(u32, widthToken, radix);
         const height = try std.fmt.parseInt(u32, heightToken, radix);
@@ -57,7 +57,7 @@ pub const Map = struct {
 
         const dataBytes = it.rest();
         var dataCount: usize = 0;
-        for (dataBytes) |byte, index| {
+        for (dataBytes) |byte| {
             if (!std.ascii.isDigit(byte))
                 continue;
 
