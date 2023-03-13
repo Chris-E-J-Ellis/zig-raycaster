@@ -48,7 +48,7 @@ pub const Texture = struct {
         };
 
         const image_data_start_offset = file_buffer[0x0A];
-        for (texture.data) |*texel, index| {
+        for (texture.data, 0..) |*texel, index| {
             const r: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3) + 2]) << 16;
             const g: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3) + 1]) << 8;
             const b: u32 = @as(u32, file_buffer[image_data_start_offset + (index * 3)]);
@@ -111,7 +111,7 @@ pub const Texture = struct {
     pub fn loadTextures(allocator: *Allocator) ![]Texture {
         var textures = try allocator.alloc(Texture, texture_filepaths.len);
 
-        for (texture_filepaths) |path, index| {
+        for (texture_filepaths, 0..) |path, index| {
             textures[index] = createFromFile(allocator, path) catch try createFromFile(allocator, error_texture_path);
         }
 
@@ -140,7 +140,7 @@ pub const Texture = struct {
             const end_index = ((texture_height - 1) * texture_width) - start_index;
             const start_slice = texture.data[start_index .. start_index + texture_width];
             const end_slice = texture.data[end_index .. end_index + texture_width];
-            for (start_slice) |_, index| {
+            for (0..texture.height) |index| {
                 std.mem.swap(u32, &start_slice[index], &end_slice[index]);
             }
         }

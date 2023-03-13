@@ -45,8 +45,11 @@ pub const Map = struct {
         var it = std.mem.split(u8, file_buffer, "\n");
         const widthLine = it.next().?;
         const heightLine = it.next().?;
-        const widthToken = std.mem.tokenize(u8, widthLine, "width =").next().?;
-        const heightToken = std.mem.tokenize(u8, heightLine, "height =").next().?;
+        var widthTokenIt = std.mem.tokenize(u8, widthLine, "width =");
+        var heightTokenIt = std.mem.tokenize(u8, heightLine, "height =");
+
+        const widthToken = widthTokenIt.next().?;
+        const heightToken = heightTokenIt.next().?;
         const radix = 10;
         const width = try std.fmt.parseInt(u32, widthToken, radix);
         const height = try std.fmt.parseInt(u32, heightToken, radix);
@@ -78,7 +81,7 @@ pub const Map = struct {
     }
 
     pub fn populateEdges(self: *Map) void {
-        for (self.data) |*item, index| {
+        for (self.data, 0..) |*item, index| {
             if (index < self.width or index % self.width == 0 or index % self.width == self.width - 1 or index > (self.width * self.height - self.width)) {
                 item.* = 1;
             }

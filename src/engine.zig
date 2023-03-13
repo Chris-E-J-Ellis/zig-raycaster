@@ -155,7 +155,7 @@ fn drawWalls(state: *GameState, renderer: *Renderer) void {
             const texel_index = rayCastResult.texel_intersect * texture.height;
             const texels = texture.data[texel_index .. texel_index + texture.height];
             var tex_buf: [texture_height]u32 = undefined;
-            for (tex_buf) |*texel, i| {
+            for (&tex_buf, 0..) |*texel, i| {
                 // Darken and remove errant bits if required
                 texel.* = if (!rayCastResult.vertical_wall) texels[i] else (texels[i] >> 1) & 0x7F7F7F;
             }

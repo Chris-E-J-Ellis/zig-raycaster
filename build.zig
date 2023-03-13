@@ -3,15 +3,20 @@ const std = @import("std");
 
 pub fn build(b: *Builder) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("raycast", "src/main.zig");
-    exe.setTarget(target);
+    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .Debug });
+    const exe = b.addExecutable(.{
+        .name = "raycast",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
 
     exe.linkSystemLibrary("c");
-    exe.addIncludeDir("deps/include");
-    exe.addLibPath("deps/lib");
+    exe.addIncludePath("deps/include");
+    exe.addLibraryPath("deps/lib");
 
     exe.addObjectFile("deps/lib/libSDL2.a");
+    //exe.linkSystemLibrary("sdl2");
 
     // I'm not entirely sure what I'm doing in the build currently,
     // but this will sort my two use cases for the moment =D
@@ -23,15 +28,8 @@ pub fn build(b: *Builder) void {
         exe.linkSystemLibrary("version");
         exe.linkSystemLibrary("gdi32");
         exe.linkSystemLibrary("setupapi");
-
-        exe.setTarget(.{
-            .cpu_arch = .x86_64,
-            .os_tag = .windows,
-            .abi = .gnu,
-        });
     }
 
-    exe.setBuildMode(mode);
     exe.install();
 
     const run_cmd = exe.run();

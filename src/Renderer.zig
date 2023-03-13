@@ -3,13 +3,13 @@ const Renderer = @This();
 pub const Colour = struct { r: u8, g: u8, b: u8 };
 
 /// My crack at some kind of interface, just to get more familiar with the language.
-drawFloorAndCeilingFn: fn (self: *Renderer) void,
-drawCenteredColumnFn: fn (self: *Renderer, x: u32, height: u32, colour: u32) void,
-drawCenteredTexturedColumnFn: fn (self: *Renderer, x: u32, height: u32, texels: []const u32) void,
-drawRectFn: fn (self: *Renderer, x: u32, y: u32, width: u32, height: u32, colour: Colour) void,
-drawLineFn: fn (self: *Renderer, x: u32, y: u32, x: u32, y: u32, colour: Colour) void,
-updateBufferFn: fn (self: *Renderer) void,
-refreshScreenFn: fn refreshScreen(self: *Renderer) void,
+drawFloorAndCeilingFn: *const fn (self: *Renderer) void,
+drawCenteredColumnFn: *const fn (self: *Renderer, x: u32, height: u32, colour: u32) void,
+drawCenteredTexturedColumnFn: *const fn (self: *Renderer, x: u32, height: u32, texels: []const u32) void,
+drawRectFn: *const fn (self: *Renderer, x: u32, y: u32, width: u32, height: u32, colour: Colour) void,
+drawLineFn: *const fn (self: *Renderer, x: u32, y: u32, x: u32, y: u32, colour: Colour) void,
+updateBufferFn: *const fn (self: *Renderer) void,
+refreshScreenFn: *const fn (self: *Renderer) void,
 
 pub fn refreshScreen(self: *Renderer) void {
     self.refreshScreenFn(self);
