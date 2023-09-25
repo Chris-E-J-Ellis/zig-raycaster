@@ -11,7 +11,7 @@ pub const Surface = sdl.SDL_Surface;
 pub const Rect = sdl.SDL_Rect;
 pub const Color = sdl.SDL_Color;
 
-const SDL_WINDOWPOS_UNDEFINED = @bitCast(c_int, sdl.SDL_WINDOWPOS_UNDEFINED_MASK);
+const SDL_WINDOWPOS_UNDEFINED: c_int = @bitCast(sdl.SDL_WINDOWPOS_UNDEFINED_MASK);
 
 pub fn initVideo() !void {
     if (sdl.SDL_Init(sdl.SDL_INIT_VIDEO) != 0) {
@@ -21,8 +21,8 @@ pub fn initVideo() !void {
 }
 
 pub fn createWindow(width: usize, height: usize) !*sdl.SDL_Window {
-    const c_width = @intCast(c_int, width);
-    const c_height = @intCast(c_int, height);
+    const c_width: c_int = @intCast(width);
+    const c_height: c_int = @intCast(height);
 
     return sdl.SDL_CreateWindow("Cast Some Rays", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, c_width, c_height, sdl.SDL_WINDOW_RESIZABLE) orelse {
         sdl.SDL_Log("Unable to create window: %s", sdl.SDL_GetError());
@@ -39,8 +39,8 @@ pub fn createRendererFromWindow(screen: *sdl.SDL_Window) !*sdl.SDL_Renderer {
 
 pub fn createRGBSurface(width: usize, height: usize) !*sdl.SDL_Surface {
     const surfaceDepth = 32;
-    const c_width = @intCast(c_int, width);
-    const c_height = @intCast(c_int, height);
+    const c_width: c_int = @intCast(width);
+    const c_height: c_int = @intCast(height);
 
     return sdl.SDL_CreateRGBSurface(0, c_width, c_height, surfaceDepth, 0, 0, 0, 0) orelse {
         sdl.SDL_Log("Unable to create surface", sdl.SDL_GetError());
@@ -57,7 +57,7 @@ pub fn createTextureFromSurface(renderer: *sdl.SDL_Renderer, surface: *sdl.SDL_S
 
 pub fn renderBuffer(renderer: *sdl.SDL_Renderer, texture: *sdl.SDL_Texture, buffer: []u32, width: usize) void {
     const bytesPerPixel = 4;
-    const pitch = @intCast(c_int, width * bytesPerPixel);
+    const pitch: c_int = @intCast(width * bytesPerPixel);
     _ = sdl.SDL_UpdateTexture(texture, null, &buffer[0], pitch);
     _ = sdl.SDL_RenderCopy(renderer, texture, null, null);
 }
@@ -68,7 +68,7 @@ pub fn refreshScreen(renderer: *sdl.SDL_Renderer) void {
 }
 
 pub fn drawRect(renderer: *sdl.SDL_Renderer, x: usize, y: usize, width: usize, height: usize, color: Color) void {
-    const rect = Rect{ .x = @intCast(c_int, x), .y = @intCast(c_int, y), .w = @intCast(c_int, width), .h = @intCast(c_int, height) };
+    const rect = Rect{ .x = @intCast(x), .y = @intCast(y), .w = @intCast(width), .h = @intCast(height) };
 
     _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     _ = sdl.SDL_RenderDrawRect(renderer, &rect);
@@ -77,7 +77,7 @@ pub fn drawRect(renderer: *sdl.SDL_Renderer, x: usize, y: usize, width: usize, h
 
 pub fn drawLine(renderer: *sdl.SDL_Renderer, x1: usize, y1: usize, x2: usize, y2: usize, color: Color) void {
     _ = sdl.SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    _ = sdl.SDL_RenderDrawLine(renderer, @intCast(c_int, x1), @intCast(c_int, y1), @intCast(c_int, x2), @intCast(c_int, y2));
+    _ = sdl.SDL_RenderDrawLine(renderer, @intCast(x1), @intCast(y1), @intCast(x2), @intCast(y2));
     _ = sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }
 
@@ -119,14 +119,14 @@ pub const KeyboardState = struct {
     state: []const u8,
 
     pub fn isPressed(self: KeyboardState, scanCode: ScanCode) bool {
-        return self.state[@intCast(usize, @enumToInt(scanCode))] == 1;
+        return self.state[@intCast(@intFromEnum(scanCode))] == 1;
     }
 };
 
 pub fn getKeyboardState() KeyboardState {
     var len: c_int = undefined;
     var keysArray = sdl.SDL_GetKeyboardState(&len);
-    return KeyboardState{ .state = keysArray[0..@intCast(usize, len)] };
+    return KeyboardState{ .state = keysArray[0..@intCast(len)] };
 }
 
 // Some good inspiration from xq's sdl bindings on how to handle this stuff.
@@ -150,7 +150,7 @@ pub const WindowEvent = union(enum) {
 
     pub fn from(sdl_window_event: sdl.SDL_WindowEvent) WindowEvent {
         return switch (sdl_window_event.event) {
-            sdl.SDL_WINDOWEVENT_RESIZED => WindowEvent{ .resize = .{ .width = @intCast(u32, sdl_window_event.data1), .height = @intCast(u32, sdl_window_event.data2) } },
+            sdl.SDL_WINDOWEVENT_RESIZED => WindowEvent{ .resize = .{ .width = @intCast(sdl_window_event.data1), .height = @intCast(sdl_window_event.data2) } },
             else => WindowEvent.unhandled,
         };
     }

@@ -12,10 +12,10 @@ pub fn build(b: *Builder) void {
     });
 
     exe.linkSystemLibrary("c");
-    exe.addIncludePath("deps/include");
-    exe.addLibraryPath("deps/lib");
+    exe.addIncludePath(.{ .cwd_relative = "deps/include" });
+    exe.addLibraryPath(.{ .cwd_relative = "deps/lib" });
 
-    exe.addObjectFile("deps/lib/libSDL2.a");
+    exe.addObjectFile(.{ .cwd_relative = "deps/lib/libSDL2.a" });
     //exe.linkSystemLibrary("sdl2");
 
     // I'm not entirely sure what I'm doing in the build currently,
@@ -29,10 +29,9 @@ pub fn build(b: *Builder) void {
         exe.linkSystemLibrary("gdi32");
         exe.linkSystemLibrary("setupapi");
     }
+    b.installArtifact(exe);
 
-    exe.install();
-
-    const run_cmd = exe.run();
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
 
     const run_step = b.step("run", "Run the app");

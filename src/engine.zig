@@ -50,7 +50,7 @@ pub const GameState = struct {
             //.map = try Map.createEmpty(allocator, 10, 10),
             .screen_width = width,
             .screen_height = height,
-            .distance_to_projection_plane = @intToFloat(f32, width / 2) / std.math.tan(rads_per_deg * default_fov / 2),
+            .distance_to_projection_plane = @as(f32, @floatFromInt(width / 2)) / std.math.tan(rads_per_deg * default_fov / 2),
             .textures = try Texture.loadTextures(allocator),
             //.textures = try Texture.loadPlaceholderTextures(allocator),
             .draw_textures = true,
@@ -99,14 +99,14 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
 
     // Render some fov rays
     const rays_to_cast: f32 = 50;
-    const cell_display_scale: f32 = @intToFloat(f32, map_display_height) / @intToFloat(f32, cell_size * state.map.height);
-    const player_x_scaled = @intToFloat(f32, state.player_x) * cell_display_scale;
-    const player_y_scaled = @intToFloat(f32, state.player_y) * cell_display_scale;
+    const cell_display_scale: f32 = @as(f32, @floatFromInt(map_display_height)) / @as(f32, @floatFromInt(cell_size * state.map.height));
+    const player_x_scaled = @as(f32, @floatFromInt(state.player_x)) * cell_display_scale;
+    const player_y_scaled = @as(f32, @floatFromInt(state.player_y)) * cell_display_scale;
 
-    const player_angle = @intToFloat(f32, state.player_angle);
-    const column_angle = @intToFloat(f32, state.fov) / rays_to_cast;
+    const player_angle = @as(f32, @floatFromInt(state.player_angle));
+    const column_angle = @as(f32, @floatFromInt(state.fov)) / rays_to_cast;
 
-    const start_angle = player_angle + @intToFloat(f32, @divFloor(state.fov, 2));
+    const start_angle = player_angle + @as(f32, @floatFromInt(@divFloor(state.fov, 2)));
     var render_angle = wrapAngle(f32, start_angle);
 
     var ray_cast_count: u32 = 0;
@@ -118,7 +118,7 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
         const hit_y = player_y_scaled - scaled_distance * std.math.sin(render_angle * rads_per_deg);
 
         // Draw ray
-        renderer.drawLine(@floatToInt(u32, player_x_scaled), @floatToInt(u32, player_y_scaled), @floatToInt(u32, hit_x), @floatToInt(u32, hit_y), ray_colour);
+        renderer.drawLine(@intFromFloat(player_x_scaled), @intFromFloat(player_y_scaled), @intFromFloat(hit_x), @intFromFloat(hit_y), ray_colour);
 
         // Highlight map cell
         renderer.drawRect(ray_cast_result.map_x * cell_display_size, ray_cast_result.map_y * cell_display_size, cell_display_size, cell_display_size, colour_red);
@@ -131,14 +131,14 @@ fn drawMap(state: *GameState, renderer: *Renderer) void {
     const scaled_distance = ray_cast_result.distance * cell_display_scale;
     const hit_x = player_x_scaled + scaled_distance * std.math.cos(player_angle * rads_per_deg);
     const hit_y = player_y_scaled - scaled_distance * std.math.sin(player_angle * rads_per_deg);
-    renderer.drawLine(@floatToInt(u32, player_x_scaled), @floatToInt(u32, player_y_scaled), @floatToInt(u32, hit_x), @floatToInt(u32, hit_y), colour_green);
+    renderer.drawLine(@intFromFloat(player_x_scaled), @intFromFloat(player_y_scaled), @intFromFloat(hit_x), @intFromFloat(hit_y), colour_green);
 }
 
 fn drawWalls(state: *GameState, renderer: *Renderer) void {
-    const player_angle = @intToFloat(f32, state.player_angle);
-    const column_angle = @intToFloat(f32, state.fov) / @intToFloat(f32, state.screen_width);
+    const player_angle = @as(f32, @floatFromInt(state.player_angle));
+    const column_angle = @as(f32, @floatFromInt(state.fov)) / @as(f32, @floatFromInt(state.screen_width));
 
-    const start_angle = player_angle + @intToFloat(f32, @divFloor(state.fov, 2));
+    const start_angle = player_angle + @as(f32, @floatFromInt(@divFloor(state.fov, 2)));
     var render_angle = wrapAngle(f32, start_angle);
 
     var column_render_count: u32 = 0;
@@ -200,17 +200,17 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
     const y_step = delta_dist_y * cell_size;
 
     var x_walk: f32 = if (x_dir == 1)
-        @intToFloat(f32, ((start_cell_x + 1) * cell_size) - start_x) * delta_dist_x
+        @as(f32, @floatFromInt(((start_cell_x + 1) * cell_size) - start_x)) * delta_dist_x
     else
-        @intToFloat(f32, start_x - (start_cell_x * cell_size)) * delta_dist_x;
+        @as(f32, @floatFromInt(start_x - (start_cell_x * cell_size))) * delta_dist_x;
 
     var y_walk = if (y_dir == 1)
-        @intToFloat(f32, ((start_cell_y + 1) * cell_size) - start_y) * delta_dist_y
+        @as(f32, @floatFromInt(((start_cell_y + 1) * cell_size) - start_y)) * delta_dist_y
     else
-        @intToFloat(f32, start_y - (start_cell_y * cell_size)) * delta_dist_y;
+        @as(f32, @floatFromInt(start_y - (start_cell_y * cell_size))) * delta_dist_y;
 
-    var x_walk_cell = @intCast(i32, start_cell_x);
-    var y_walk_cell = @intCast(i32, start_cell_y);
+    var x_walk_cell: i32 = @intCast(start_cell_x);
+    var y_walk_cell: i32 = @intCast(start_cell_y);
 
     var wall_type: u8 = undefined;
     var vertical_wall_hit = false;
@@ -226,7 +226,7 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
             vertical_wall_hit = false;
         }
 
-        var index = @intCast(usize, x_walk_cell + (y_walk_cell * @intCast(i32, map.width)));
+        var index: usize = @intCast(x_walk_cell + (y_walk_cell * @as(i32, @intCast(map.width))));
 
         if (map.data[index] >= 1) {
             wall_type = map.data[index];
@@ -242,18 +242,18 @@ fn castRay(map: Map, start_x: u32, start_y: u32, angle_degs: f32) RayCastResult 
 
     // Calculate intersection texel.
     const texel_intersect_coord = if (vertical_wall_hit)
-        @intToFloat(f32, start_y) - (distance * sin_theta)
+        @as(f32, @floatFromInt(start_y)) - (distance * sin_theta)
     else
-        (distance * cos_theta) + @intToFloat(f32, start_x);
+        (distance * cos_theta) + @as(f32, @floatFromInt(start_x));
 
     // Flip texture depending on direction.
-    var texel_intersect = @floatToInt(u32, @mod(texel_intersect_coord, cell_size));
+    var texel_intersect = @as(u32, @intFromFloat(@mod(texel_intersect_coord, cell_size)));
     if ((vertical_wall_hit and x_dir == -1) or (!vertical_wall_hit and y_dir == 1))
         texel_intersect = (texture_width - 1) - texel_intersect;
 
     return RayCastResult{
-        .map_x = @intCast(u32, x_walk_cell),
-        .map_y = @intCast(u32, y_walk_cell),
+        .map_x = @intCast(x_walk_cell),
+        .map_y = @intCast(y_walk_cell),
         .distance = distance,
         .vertical_wall = vertical_wall_hit,
         .wall_type = wall_type,
@@ -270,7 +270,7 @@ fn calcHeight(distance_to_projection_plane: f32, distance: f32, viewing_angle: f
     if (view_corrected_distance == 0)
         view_corrected_distance += 0.01;
 
-    const col_height = @floatToInt(u32, cell_size / view_corrected_distance * distance_to_projection_plane);
+    const col_height = @as(u32, @intFromFloat(cell_size / view_corrected_distance * distance_to_projection_plane));
 
     return col_height;
 }
@@ -294,31 +294,31 @@ pub fn turnRight(state: *GameState) void {
 
 // Simple movement, not too fine grained, given how much shared logic there is here, I can tidy this up.
 pub fn moveForward(state: *GameState) void {
-    var x_inc = std.math.cos(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    var y_inc = std.math.sin(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x - @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x + @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y + @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y - @floatToInt(u32, y_inc);
+    var x_inc = std.math.cos(@as(f32, @floatFromInt(state.player_angle)) * rads_per_deg) * speed_scale;
+    var y_inc = std.math.sin(@as(f32, @floatFromInt(state.player_angle)) * rads_per_deg) * speed_scale;
+    state.player_x = if (x_inc < 0) state.player_x - @as(u32, @intFromFloat(std.math.fabs(x_inc))) else state.player_x + @as(u32, @intFromFloat(x_inc));
+    state.player_y = if (y_inc < 0) state.player_y + @as(u32, @intFromFloat(std.math.fabs(y_inc))) else state.player_y - @as(u32, @intFromFloat(y_inc));
 }
 
 pub fn moveBackward(state: *GameState) void {
-    var x_inc = std.math.cos(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    var y_inc = std.math.sin(@intToFloat(f32, state.player_angle) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    var x_inc = std.math.cos(@as(f32, @floatFromInt(state.player_angle)) * rads_per_deg) * speed_scale;
+    var y_inc = std.math.sin(@as(f32, @floatFromInt(state.player_angle)) * rads_per_deg) * speed_scale;
+    state.player_x = if (x_inc < 0) state.player_x + @as(u32, @intFromFloat(std.math.fabs(x_inc))) else state.player_x - @as(u32, @intFromFloat(x_inc));
+    state.player_y = if (y_inc < 0) state.player_y - @as(u32, @intFromFloat(std.math.fabs(y_inc))) else state.player_y + @as(u32, @intFromFloat(y_inc));
 }
 
 pub fn strafeLeft(state: *GameState) void {
-    var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
-    var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 270) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    var x_inc = std.math.cos(@as(f32, @floatFromInt(state.player_angle + 270)) * rads_per_deg) * speed_scale;
+    var y_inc = std.math.sin(@as(f32, @floatFromInt(state.player_angle + 270)) * rads_per_deg) * speed_scale;
+    state.player_x = if (x_inc < 0) state.player_x + @as(u32, @intFromFloat(std.math.fabs(x_inc))) else state.player_x - @as(u32, @intFromFloat(x_inc));
+    state.player_y = if (y_inc < 0) state.player_y - @as(u32, @intFromFloat(std.math.fabs(y_inc))) else state.player_y + @as(u32, @intFromFloat(y_inc));
 }
 
 pub fn strafeRight(state: *GameState) void {
-    var x_inc = std.math.cos(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
-    var y_inc = std.math.sin(@intToFloat(f32, state.player_angle + 90) * rads_per_deg) * speed_scale;
-    state.player_x = if (x_inc < 0) state.player_x + @floatToInt(u32, std.math.fabs(x_inc)) else state.player_x - @floatToInt(u32, x_inc);
-    state.player_y = if (y_inc < 0) state.player_y - @floatToInt(u32, std.math.fabs(y_inc)) else state.player_y + @floatToInt(u32, y_inc);
+    var x_inc = std.math.cos(@as(f32, @floatFromInt(state.player_angle + 90)) * rads_per_deg) * speed_scale;
+    var y_inc = std.math.sin(@as(f32, @floatFromInt(state.player_angle + 90)) * rads_per_deg) * speed_scale;
+    state.player_x = if (x_inc < 0) state.player_x + @as(u32, @intFromFloat(std.math.fabs(x_inc))) else state.player_x - @as(u32, @intFromFloat(x_inc));
+    state.player_y = if (y_inc < 0) state.player_y - @as(u32, @intFromFloat(std.math.fabs(y_inc))) else state.player_y + @as(u32, @intFromFloat(y_inc));
 }
 
 pub fn toggleTextures(state: *GameState) void {

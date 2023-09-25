@@ -84,12 +84,12 @@ pub const Texture = struct {
                 const x_colour: u32 = x * 256 / texture_width;
                 const xy_colour: u32 = y * 128 / texture_height + x * 128 / texture_width;
                 const xor_colour = (x * 256 / texture_width) ^ (y * 256 / texture_height);
-                textures[1].data[x + y * texture_width] = 0xAA0000 * @as(u32, @boolToInt(x != y and x != texture_width - y));
+                textures[1].data[x + y * texture_width] = 0xAA0000 * @as(u32, @intFromBool(x != y and x != texture_width - y));
                 textures[2].data[x + y * texture_width] = 0x000100 * xor_colour;
                 textures[3].data[x + y * texture_width] = 0x000001 * xy_colour;
-                textures[4].data[x + y * texture_width] = 0x010100 * @as(u32, @boolToInt(x % 16 != 0 and y % 16 != 0 and y != 63)) * x_colour;
+                textures[4].data[x + y * texture_width] = 0x010100 * @as(u32, @intFromBool(x % 16 != 0 and y % 16 != 0 and y != 63)) * x_colour;
                 textures[5].data[x + y * texture_width] = 0x010001 * x_colour;
-                textures[6].data[x + y * texture_width] = 0xFFFFFF * @as(u32, @boolToInt(x != 0 and x != 63 and y != 0 and y != 63));
+                textures[6].data[x + y * texture_width] = 0xFFFFFF * @as(u32, @intFromBool(x != 0 and x != 63 and y != 0 and y != 63));
 
                 if (x == 0)
                     textures[6].data[x + y * texture_width] = 0x33FF33;

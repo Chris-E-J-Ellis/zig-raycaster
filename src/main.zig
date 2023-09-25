@@ -38,7 +38,7 @@ pub fn main() anyerror!void {
         time = std.time.nanoTimestamp();
         var delta_time = time - old_time;
         if (delta_time < min_time_per_frame) {
-            std.time.sleep(@intCast(u64, min_time_per_frame - delta_time));
+            std.time.sleep(@intCast(min_time_per_frame - delta_time));
         }
         delta_time = std.time.nanoTimestamp() - old_time;
 
